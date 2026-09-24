@@ -2,20 +2,22 @@
 /* ============ Event content: edit this block to reuse the app next year ============ */
 const EVENT={kicker:"AUDCONNECT 2026",theme:"Driving Efficiency, Enhancing Care",date:"10 October 2026",time:"12:30 to 6:00 PM",lunch:"Lunch from 12:30 to 2:00 PM",room:"Level 3, Room 300-302",venue:"Suntec Singapore",cpe:"Participation in this event is recognised with 4 CPE points under Pillar 1 of the SAPS CPE program.",host:"Society for Audiology Professionals Singapore"};
 const SPEAKERS={
-  sg:{name:"Dr. Sharad Govil",role:"President",org:"Society for Audiology Professionals Singapore"},
-  su:{name:"Su Junqiang",role:"SAPS Self-Regulation Update",org:""},
-  jo:{name:"Jessica Ong",role:"Clinical Sales Specialist",org:"Cochlear"},
-  rh:{name:"Dr. Rebecca Heywood",role:"Senior Consultant",org:"The ENT Clinic"},
-  ct:{name:"Chermaine Teo",role:"Founder & Audiologist",org:"Faith Hearing Specialist"},
-  tt:{name:"Tammy Toh",role:"Growth Associate",org:"Heidi"},
-  at:{name:"Adam Tan",role:"Head of Audiology Services",org:"Singapore General Hospital"},
-  al:{name:"Alan Tseng",role:"Senior Audiologist",org:"Singapore General Hospital"},
-  th:{name:"Teoh Hui Yee",role:"Senior Audiologist",org:"Singapore General Hospital"},
-  ls:{name:"Lee Si Ting",role:"Senior Audiologist",org:"Ng Teng Fong General Hospital"},
-  fm:{name:"Fu Manjia",role:"Senior Audiologist",org:"Ng Teng Fong General Hospital"},
-  lz:{name:"Lee Zu Xuan",role:"Senior Audiologist",org:"Amazing Hearing Group"},
+  sg:{name:"Dr. Sharad Govil",role:"President",org:"SAPS",bio:[]},
+  su:{name:"Su Junqiang",role:"Vice-President",org:"SAPS",bio:[]},
+  jo:{name:"Jessica Ong",role:"Clinical Specialist",org:"Cochlear",bio:["Jessica holds a Master of Audiology and a Bachelor of Biomedical Science from the University of Auckland. With clinical experience across New Zealand and Singapore, she has extensive experience supporting patients with complex hearing loss and hearing implants. In her role with Cochlear, Jessica partners with clinicians and healthcare teams across the country to support cochlear implant services, foster strong clinical partnerships, and improve access to implantable hearing solutions and outcomes for people with significant hearing loss."]},
+  rh:{name:"Dr. Rebecca Heywood",role:"Senior Consultant ENT Surgeon",org:"The ENT Clinic",bio:["Dr Rebecca Heywood is a UK-trained ENT specialist and fellowship-trained Ear and Hearing Surgeon based at The ENT Clinic in Singapore. With over 25 years of experience across the UK, Australia and Singapore, she cares for adults and children with a wide range of ear and hearing problems, with particular expertise in hearing restoration and implantable hearing technologies.","She has established and led cochlear implant services, contributed to hearing research and implant development, and participated in World Health Organization ear and hearing care initiatives. Rebecca is also an active researcher and educator, passionate about improving hearing health and helping people stay connected throughout life."]},
+  ct:{name:"Chermaine Teo",role:"Founder & Audiologist",org:"Faith Hearing Specialists",bio:["Chermaine Teo is the Founder and Audiologist of Faith Hearing Specialists, Singapore. She holds a Master of Audiology from the University of Southampton, UK, and received clinical training in cochlear implantation at the Southampton Auditory Implant Centre.","Her clinical interests include cochlear implants, tinnitus, and the rehabilitation of individuals with long-standing hearing loss and auditory deprivation. Her work includes cochlear implant assessment, mapping and rehabilitation, as well as supporting individuals with severe and debilitating tinnitus. Based in private practice, Chermaine sees patients from Singapore and overseas and also travels regionally to provide audiological care. Her caseload includes individuals with diverse hearing histories, with a particular interest in those seeking hearing intervention after many years of hearing loss or auditory deprivation."]},
+  tt:{name:"Tammy Toh",role:"Growth Associate",org:"Heidi",bio:["Tammy is a Clinical Growth Associate at Heidi, where she partners with clinicians and healthcare organisations to understand their pain points, tailor onboarding and support, and build workflow-specific templates that reduce documentation burden and improve efficiency. Having previously worked in healthcare organisations, she understands firsthand the administrative pressures clinicians face.","Heidi is building an AI Care Partner to expand clinical capacity by automating administrative work, including documentation, form filling, and task management, so clinicians can focus on patient care. Today, Heidi supports more than 2 million consultations each week across 110 languages and 190 countries."]},
+  at:{name:"Adam Tan",role:"Head of Audiology Services",org:"Singapore General Hospital",bio:["Adam Tan serves as the Head of Audiology Services at Singapore General Hospital, where he actively drives quality improvement and process transformation. As a GROSS (Get Rid of Silly Stuff) coach, he empowers teams to cut through operational bottlenecks by introducing practical digital and automation tools like Excel VBA, Pair Assistant, Power Automate, and Robotic Process Automations. Having led multiple successful quality improvement projects over the years, Adam's focus on eliminating redundant work earned top prizes at the SGH GROSS Awards. He also contributes to health system innovation through SingHealth's Allied Health Data and Innovation Taskforce."]},
+  al:{name:"Alan Tseng",role:"Senior Audiologist",org:"Singapore General Hospital",bio:["Tseng Chien Chih Alan is a Senior Audiologist at Singapore General Hospital with a keen interest in healthcare innovation and digital transformation. He has been actively involved in quality improvement initiatives, contributing to projects that leverage Microsoft automation, VBA coding, robotic process automation (RPA), and AI tools. Through collaboration between Clinical Operations and Digital/Data teams, he supports the development of efficient and sustainable clinical workflows."]},
+  th:{name:"Teoh Hui Yee",role:"Senior Audiologist",org:"Singapore General Hospital",bio:["Teoh Hui Yee is an audiologist at Singapore General Hospital, interested in bridging clinical practice with digital health and technology. As part of the department's digital health and data portfolio, she works with the team to explore how digital solutions can improve workflows and support more efficient healthcare delivery. She is actively involved in designing and implementing workflow automation using Microsoft Power Automate, translating day-to-day operational challenges into practical digital solutions."]},
+  ls:{name:"Lee Si Ting",role:"Senior Audiologist",org:"Ng Teng Fong General Hospital",bio:[]},
+  fm:{name:"Fu Manjia",role:"Senior Audiologist",org:"Ng Teng Fong General Hospital",bio:[]},
+  lz:{name:"Lee Zu Xuan",role:"Senior Audiologist",org:"Amazing Hearing Group",bio:["Lee Zu Xuan is an experienced audiologist with a strong academic foundation and a diverse professional background. He holds a Bachelor's degree in Biomedical Engineering and a Master's degree in Audiology from the National University of Singapore (NUS). Zu Xuan has developed a well-rounded career in audiology, with previous roles as a Product Audiologist at GN Group and at Cochlear Limited. He currently serves as Senior Audiologist at Amazing Hearing Group, where he continues to apply his clinical and technical expertise to deliver high-quality patient care."]},
 };
-const SPK_ORDER=["jo","rh","ct","tt","at","al","th","ls","fm","lz"];
+const SPK_ORDER=["sg","su","jo","rh","ct","tt","ls","fm","at","al","th","lz"];
+const SOCIETY={vision:"To be the leading voice in advancing audiology practice and hearing care for patients in Singapore.",mission:"To connect, support, and empower audiology professionals through learning, networking and advocacy.",values:["Ethical","Competent","Integrity","Social Responsibility","United"]};
+const COMMITTEE=[["c_sg","Sharad Govil","President"],["c_su","Su Junqiang","Vice-President"],["c_id","Isshani Devaraj","Treasurer"],["c_ls","Lee Si Ting","Secretary"],["c_af","Augustin Fiala","Public Affairs Officer"],["c_ck","Charis Koh","Social Activities Officer"],["c_ss","Sadrina Shah","Assistant Treasurer"],["c_kh","Kavya Hedge","Assistant Secretary"]];
 const SESSIONS=[
   {id:"reg",time:"12:30",end:"14:00",title:"Registration & Lunch",sub:"Exhibition booths and posters open"},
   {id:"t1",n:"01",time:"14:00",end:"14:20",title:"Shaping the Future of Audiology",sub:"Opening Address and SAPS Self-Regulation Update",spk:["sg","su"],by:"Dr. Sharad Govil & Su Junqiang",rate:true},
@@ -63,7 +65,7 @@ const sgNow=()=>{const p=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Singapo
 const TEST_NOW=new URLSearchParams(location.search).get("now");
 function nowSession(){const n=sgNow();const t=TEST_NOW||(n.date===EVENT_DATE?n.time:null);if(!t)return null;return SESSIONS.find(s=>mins(t)>=mins(s.time)&&mins(t)<mins(s.end))}
 const ini=n=>n.replace(/^Dr\.?\s+/,"").split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase();
-const photo=(k,size)=>IMG[k]?`<img class="ph" src="${IMG[k]}" alt="" ${size?`style="width:${size}px;height:${size}px"`:""}>`:`<span class="ph ini" ${size?`style="width:${size}px;height:${size}px"`:""}>${ini(SPEAKERS[k].name)}</span>`;
+const photo=(k,size)=>{const src=IMG[k]||IMG["c_"+k];const st=size?`style="width:${size}px;height:${size}px"`:"";return src?`<img class="ph" src="${src}" alt="" ${st}>`:`<span class="ph ini" ${st}>${ini(SPEAKERS[k].name)}</span>`};
 const rateable=()=>SESSIONS.filter(s=>s.rate);
 const photoSrc=p=>p.storage_path.startsWith("static/")?IMG[p.storage_path.slice(7)]:`${SB_URL}/storage/v1/object/public/photos/${p.storage_path}`;
 const errMsg=e=>{const m=(e&&(e.message||e.error_description))||"";if(/company name/i.test(m))return "Please enter your company name";if(/closed/i.test(m))return m.charAt(0).toUpperCase()+m.slice(1);if(/not checked in/i.test(m))return "Please check in again";if(/Failed to fetch|NetworkError|network/i.test(m))return "No connection. Please try again";return "Something went wrong. Please try again"};
@@ -176,7 +178,8 @@ function Prog(){const now=nowSession();return Hero()+`
     ${s.n?`<span class="sess-time">${fmt(s.time)} to ${fmt(s.end)} PM${S.ratings[s.id]?' <span class="pill ok">Rated</span>':""}</span>`:""}</span></button>`).join("")}</div>
   <p class="small muted" style="margin-top:14px;font-style:italic;text-align:center">${EVENT.cpe}</p>
   <div class="rule-h">Meet Our Speakers</div>
-  <div class="spk-grid">${SPK_ORDER.map(k=>`<button class="spk" data-spk="${k}">${photo(k)}<span class="n">${esc(SPEAKERS[k].name)}</span><span class="r">${esc(SPEAKERS[k].role)},<br>${esc(SPEAKERS[k].org)}</span></button>`).join("")}</div>`}
+  <div class="spk-grid">${SPK_ORDER.map(k=>`<button class="spk" data-spk="${k}">${photo(k)}<span class="n">${esc(SPEAKERS[k].name)}</span><span class="r">${esc(SPEAKERS[k].role)},<br>${esc(SPEAKERS[k].org)}</span></button>`).join("")}</div>
+  ${About()}`}
 
 function Sess(id){const s=SESSIONS.find(x=>x.id===id);return `<span class="sess-time" style="margin:0">${fmt(s.time)} to ${fmt(s.end)} PM</span>
   <h2 style="margin:6px 0 4px;font-size:21px;text-transform:uppercase;font-weight:900;color:var(--red-t)">${esc(s.title)}</h2>
@@ -185,8 +188,15 @@ function Sess(id){const s=SESSIONS.find(x=>x.id===id);return `<span class="sess-
   <p class="small muted">${EVENT.room}, ${EVENT.venue}</p>
   ${s.rate?`<div style="display:flex;gap:8px;margin-top:10px"><button class="btn" data-qa="${id}">QUESTIONS</button><button class="btn ghost" data-rate="${id}">${S.ratings[id]?"RATED":"RATE"}</button></div>`:""}`}
 
+function About(){return `<div class="rule-h">About the Society</div>
+  <div class="about"><div class="ab"><span class="ab-t">Vision</span><p>${esc(SOCIETY.vision)}</p></div>
+  <div class="ab"><span class="ab-t">Mission</span><p>${esc(SOCIETY.mission)}</p></div>
+  <div class="ab"><span class="ab-t">Core Values</span><div class="vals">${SOCIETY.values.map(v=>`<span>${esc(v)}</span>`).join("")}</div></div></div>
+  <div class="rule-h">2025-2026 Committee</div>
+  <div class="spk-grid comm">${COMMITTEE.map(([k,n,r])=>`<div class="spk"><img class="ph" src="${IMG[k]}" alt=""><span class="n">${esc(n)}</span><span class="r">${esc(r)}</span></div>`).join("")}</div>`}
 function Spk(k){const v=SPEAKERS[k];const ss=SESSIONS.filter(s=>(s.spk||[]).includes(k));return `<div style="text-align:center">${photo(k,110)}
   <h2 style="margin:16px 0 2px;font-size:22px;text-transform:uppercase;font-weight:900">${esc(v.name)}</h2><p class="muted">${esc([v.role,v.org].filter(Boolean).join(", "))}</p></div>
+  ${(v.bio||[]).map(p=>`<p class="bio">${esc(p)}</p>`).join("")}
   <div class="rule-h" style="margin-top:18px">Speaking At</div>${ss.map(s=>`<p><span class="sess-title">${esc(s.title)}</span><span class="small muted">${fmt(s.time)} to ${fmt(s.end)} PM</span></p>`).join("")}
   <button class="btn ghost" data-a="close">CLOSE</button>`}
 function Cert(){return `<div class="certwrap"><div class="pcert" role="img" aria-label="Certificate of attendance for ${esc(S.me.fn)} ${esc(S.me.ln)}">
