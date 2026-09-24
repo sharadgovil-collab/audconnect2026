@@ -17,7 +17,7 @@ const SPEAKERS={
 };
 const SPK_ORDER=["sg","su","jo","rh","ct","tt","ls","fm","at","al","th","lz"];
 const SOCIETY={vision:"To be the leading voice in advancing audiology practice and hearing care for patients in Singapore.",mission:"To connect, support, and empower audiology professionals through learning, networking and advocacy.",values:["Ethical","Competent","Integrity","Social Responsibility","United"]};
-const COMMITTEE=[["c_sg","Sharad Govil","President"],["c_su","Su Junqiang","Vice-President"],["c_id","Isshani Devaraj","Treasurer"],["c_ls","Lee Si Ting","Secretary"],["c_af","Augustin Fiala","Public Affairs Officer"],["c_ck","Charis Koh","Social Activities Officer"],["c_ss","Sadrina Shah","Assistant Treasurer"],["c_kh","Kavya Hedge","Assistant Secretary"]];
+const COMMITTEE=[["c_sg","Sharad Govil","President"],["c_su","Su Junqiang","Vice-President"],["c_id","Isshani Devaraj","Treasurer"],["c_ls","Lee Si Ting","Secretary"],["c_af","Augustin Fiala","Public Affairs Officer"],["c_ck","Charis Koh","Social Activities Officer"],["c_ss","Sadrina Shah","Assistant Treasurer"],["c_kh","Kavya Hegde","Assistant Secretary"]];
 const SESSIONS=[
   {id:"reg",time:"12:30",end:"14:00",title:"Registration & Lunch",sub:"Exhibition booths and posters open"},
   {id:"t1",n:"01",time:"14:00",end:"14:20",title:"Shaping the Future of Audiology",sub:"Opening Address and SAPS Self-Regulation Update",spk:["sg","su"],by:"Dr. Sharad Govil & Su Junqiang",rate:true},
