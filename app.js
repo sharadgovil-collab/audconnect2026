@@ -50,7 +50,7 @@ const EVENT_DATE="2026-10-10";
 let S={
   token:null,me:null,committee:false,reg:{member:null},tab:"prog",qaSession:"t1",qaSort:"top",playSeg:"photos",
   q:[],myVotes:new Set(),myQs:new Set(),pollCounts:POLL.o.map(()=>0),myPoll:null,words:[],myWord:null,
-  board:[],myTrivia:null,trivia:{i:0,picked:null,score:0},photos:[],likes:{},myLikes:new Set(),
+  board:[],myTrivia:null,trivia:{i:0,picked:null,score:0},photos:[],likes:{},myLikes:new Set(),ce:{attempts:0,best:null,total:null,passed:false},cardsSeen:[],win:{open:false},quiz:null,welcome:null,
   stage:{view:"photos",pinned_question:null,poll_open:true,cloud_open:true},ratings:{},feedback:null,nps:null,
   admin:false,adTab:"over",ad:null,attQ:"",stageLocal:null
 };
@@ -68,7 +68,7 @@ const ini=n=>n.replace(/^Dr\.?\s+/,"").split(/\s+/).map(w=>w[0]).slice(0,2).join
 const photo=(k,size)=>{const src=IMG[k]||IMG["c_"+k];const st=size?`style="width:${size}px;height:${size}px"`:"";return src?`<img class="ph" src="${src}" alt="" ${st}>`:`<span class="ph ini" ${st}>${ini(SPEAKERS[k].name)}</span>`};
 const rateable=()=>SESSIONS.filter(s=>s.rate);
 const photoSrc=p=>p.storage_path.startsWith("static/")?IMG[p.storage_path.slice(7)]:`${SB_URL}/storage/v1/object/public/photos/${p.storage_path}`;
-const errMsg=e=>{const m=(e&&(e.message||e.error_description))||"";if(/company name/i.test(m))return "Please enter your company name";if(/closed/i.test(m))return m.charAt(0).toUpperCase()+m.slice(1);if(/not checked in/i.test(m))return "Please check in again";if(/Failed to fetch|NetworkError|network/i.test(m))return "No connection. Please try again";return "Something went wrong. Please try again"};
+const errMsg=e=>{const m=(e&&(e.message||e.error_description))||"";if(/company name/i.test(m))return "Please enter your company name";if(/opens at 5/i.test(m))return "Opens at 5:00 PM on 10 October";if(/closed/i.test(m))return m.charAt(0).toUpperCase()+m.slice(1);if(/not checked in/i.test(m))return "Please check in again";if(/Failed to fetch|NetworkError|network/i.test(m))return "No connection. Please try again";return "Something went wrong. Please try again"};
 async function rpc(fn,args){const {data,error}=await sb.rpc(fn,args);if(error)throw error;return data}
 
 /* ============ Loading shared data ============ */
@@ -97,11 +97,13 @@ async function loadMine(){
   S.myVotes=new Set(d.question_votes||[]);S.myQs=new Set(d.my_questions||[]);
   S.myPoll=(d.poll_votes||{})[POLL.id]??null;S.myWord=d.word;S.myTrivia=d.trivia;
   S.myLikes=new Set(d.photo_likes||[]);S.ratings=d.ratings||{};S.feedback=d.feedback;
-  S.committee=p.committee===true;
+  S.committee=p.committee===true;S.ce=d.ce||S.ce;S.cardsSeen=d.cards_seen||[];
+  try{S.win=await rpc("window_status",{p_token:S.token})}catch(e){}
 }
-async function loadAdmin(){if(!S.committee)return;S.ad=await rpc("admin_dashboard",{p_token:S.token})}
+async function loadAdmin(){if(!S.committee)return;const [a,x]=await Promise.all([rpc("admin_dashboard",{p_token:S.token}),rpc("admin_export",{p_token:S.token})]);S.ad=a;S.adx=x}
 
 let _t=null;
+setInterval(async()=>{if(S.token&&!(S.win&&S.win.open)){try{const w=await rpc("window_status",{p_token:S.token});if(w.open!==S.win.open){S.win=w;softRender()}}catch(e){}}},60000);
 function refreshSoon(){clearTimeout(_t);_t=setTimeout(async()=>{try{await loadPublic();if(S.admin||$("#stage").classList.contains("open"))await loadAdmin()}catch(e){}softRender()},350)}
 function softRender(){
   // Avoid wiping what someone is typing
@@ -178,8 +180,7 @@ function Prog(){const now=nowSession();return Hero()+`
     ${s.n?`<span class="sess-time">${fmt(s.time)} to ${fmt(s.end)} PM${S.ratings[s.id]?' <span class="pill ok">Rated</span>':""}</span>`:""}</span></button>`).join("")}</div>
   <p class="small muted" style="margin-top:14px;font-style:italic;text-align:center">${EVENT.cpe}</p>
   <div class="rule-h">Meet Our Speakers</div>
-  <div class="spk-grid">${SPK_ORDER.map(k=>`<button class="spk" data-spk="${k}">${photo(k)}<span class="n">${esc(SPEAKERS[k].name)}</span><span class="r">${esc(SPEAKERS[k].role)},<br>${esc(SPEAKERS[k].org)}</span></button>`).join("")}</div>
-  ${About()}`}
+  <div class="spk-grid">${SPK_ORDER.map(k=>`<button class="spk" data-spk="${k}">${photo(k)}<span class="n">${esc(SPEAKERS[k].name)}</span><span class="r">${esc(SPEAKERS[k].role)},<br>${esc(SPEAKERS[k].org)}</span></button>`).join("")}</div>`}
 
 function Sess(id){const s=SESSIONS.find(x=>x.id===id);return `<span class="sess-time" style="margin:0">${fmt(s.time)} to ${fmt(s.end)} PM</span>
   <h2 style="margin:6px 0 4px;font-size:21px;text-transform:uppercase;font-weight:900;color:var(--red-t)">${esc(s.title)}</h2>
@@ -199,9 +200,9 @@ function Spk(k){const v=SPEAKERS[k];const ss=SESSIONS.filter(s=>(s.spk||[]).incl
   ${(v.bio||[]).map(p=>`<p class="bio">${esc(p)}</p>`).join("")}
   <div class="rule-h" style="margin-top:18px">Speaking At</div>${ss.map(s=>`<p><span class="sess-title">${esc(s.title)}</span><span class="small muted">${fmt(s.time)} to ${fmt(s.end)} PM</span></p>`).join("")}
   <button class="btn ghost" data-a="close">CLOSE</button>`}
-function Cert(){return `<div class="certwrap"><div class="pcert" role="img" aria-label="Certificate of attendance for ${esc(S.me.fn)} ${esc(S.me.ln)}">
+function Cert(){return `<div class="certwrap"><div class="pcert" role="img" aria-label="Certificate of participation for ${esc(S.me.fn)} ${esc(S.me.ln)}">
   <img class="lg" src="${IMG.clogo}" alt="">
-  <div class="ttl">CERTIFICATE OF ATTENDANCE</div>
+  <div class="ttl">CERTIFICATE OF PARTICIPATION</div>
   <div class="l1 it">This is to certify that</div>
   <div class="nm">${esc(S.me.fn)} ${esc(S.me.ln)}</div>
   <div class="body it">attended AudConnect 2026: NextGen Audiology, Driving Efficiency, Enhancing Care<br>held on 10 October 2026 at Suntec Singapore</div>
@@ -222,8 +223,8 @@ function QA(){const qs=S.q.filter(q=>q.session_id===S.qaSession).sort((a,b)=>S.q
   <div class="list">${qs.length?qs.map(q=>`<div class="q"><button class="up" data-up="${q.id}" aria-pressed="${S.myVotes.has(q.id)}" aria-label="Upvote">${I.up}${q.votes}</button><div style="flex:1"><div>${esc(q.body)}</div><div class="small muted">${esc(q.author_name)}${q.answered?' <span class="pill ok">Answered</span>':""}</div></div></div>`).join(""):`<div class="q"><span class="muted">No questions yet. Be the first to ask.</span></div>`}</div>`}
 
 function Engage(){const g=S.playSeg;return `<h1 class="page-title">Engage</h1><p class="tag">Join in live</p><div style="height:14px"></div>
-  <div class="seg"><button data-seg="photos" aria-pressed="${g==="photos"}">Photos</button><button data-seg="poll" aria-pressed="${g==="poll"}">Poll</button><button data-seg="cloud" aria-pressed="${g==="cloud"}">Words</button><button data-seg="quiz" aria-pressed="${g==="quiz"}">Trivia</button></div>
-  ${g==="photos"?Photos():g==="poll"?Poll():g==="cloud"?Cloud():Quiz()}`}
+  <div class="seg"><button data-seg="photos" aria-pressed="${g==="photos"}">Photos</button><button data-seg="poll" aria-pressed="${g==="poll"}">Poll</button><button data-seg="cloud" aria-pressed="${g==="cloud"}">Words</button></div>
+  ${g==="photos"?Photos():g==="poll"?Poll():Cloud()}`}
 function Photos(){return `<label class="upl" for="pfile">${I.cam}<b>Take or upload a photo</b><span class="small muted">Share your AudConnect moments. The best ones appear on the big screen.</span></label>
   <input id="pfile" type="file" accept="image/*" style="position:absolute;left:-9999px" aria-label="Choose a photo">
   <p class="small muted" style="margin:12px 0;text-align:center">Posting elsewhere too? Tag <b style="color:#fff">#AudConnect2026</b></p>
@@ -255,28 +256,69 @@ function Rate(id){const s=SESSIONS.find(x=>x.id===id);const r=S.ratings[id]||{};
   <label class="lbl" for="rc">Anything the speaker should know? (optional)</label><textarea id="rc" class="field" rows="3">${esc(r.comment||"")}</textarea>
   <div style="height:12px"></div><button class="btn" data-a="saverate" data-sid="${id}" id="rsave" ${r.stars?"":"disabled"}>SAVE RATING</button>`}
 
-function FB(){const done=rateable().filter(s=>S.ratings[s.id]).length;return `<h1 class="page-title">Feedback</h1><p class="tag">Help shape AudConnect 2027</p>
-  <p class="muted" style="margin-top:12px">Rate each session and the event. Completing the event feedback unlocks your attendance certificate.</p>
-  <div class="rule-h">Sessions</div><div class="list">${rateable().map(s=>`<button class="item" data-rate="${s.id}"><span class="num" style="font-size:20px;min-width:30px">${s.n||"P"}</span><span style="flex:1;font-weight:700;font-size:14px">${esc(s.title)}</span>${S.ratings[s.id]?`<span class="pill ok">${S.ratings[s.id].stars} ★</span>`:'<span class="pill">Rate</span>'}</button>`).join("")}</div>
-  <p class="small muted" style="margin-top:8px">${done} of ${rateable().length} rated</p>
-  <div class="rule-h">The Event</div>
-  ${S.feedback?`<div class="box"><span class="pill ok">Thank you</span><p style="margin-top:10px">Your feedback is in. Your certificate is ready in the Me tab.</p></div>`:
+const fmtSG=d=>new Date(d).toLocaleString("en-SG",{timeZone:"Asia/Singapore",day:"numeric",month:"short",hour:"numeric",minute:"2-digit"});
+function FB(){const done=rateable().filter(s=>S.ratings[s.id]).length;const W=S.win||{};
+  const rate=`<div class="rule-h">Rate the Talks</div><div class="list">${rateable().map(s=>`<button class="item" data-rate="${s.id}"><span class="num" style="font-size:20px;min-width:30px">${s.n||"P"}</span><span style="flex:1;font-weight:700;font-size:14px">${esc(s.title)}</span>${S.ratings[s.id]?`<span class="pill ok">${S.ratings[s.id].stars} ★</span>`:'<span class="pill">Rate</span>'}</button>`).join("")}</div>
+  <p class="small muted" style="margin-top:8px">${done} of ${rateable().length} rated. You can rate talks at any time.</p>`;
+  if(!W.open)return `<h1 class="page-title">CE &amp; Feedback</h1><p class="tag">Earn your certificate</p>
+  <div class="redbox" style="margin-top:16px;text-align:center"><div style="font-size:34px">🔒</div><p style="font-weight:800;margin:6px 0 4px">Opens at 5:00 PM on 10 October</p><p class="small muted" style="margin:0">The CE quiz and event feedback open near the end of the programme and stay open until 11:59 PM. Pass the quiz (80% or more) and submit your feedback to receive your Certificate of Participation.</p></div>${rate}`;
+  const ce=S.ce;
+  return `<h1 class="page-title">CE &amp; Feedback</h1><p class="tag">Earn your certificate</p>
+  <p class="muted" style="margin-top:12px">Two steps: pass the CE quiz with 80% or more, then submit your event feedback. Open until 11:59 PM tonight.</p>
+  <div class="rule-h">Step 1: CE Quiz</div><div class="box">
+   ${ce.passed?`<span class="pill ok">Passed</span><p style="margin:10px 0 0">Best score ${ce.best}/${ce.total}. Well done!</p>`:ce.attempts?`<span class="pill">Not yet passed</span><p style="margin:10px 0 12px">Best score so far ${ce.best}/${ce.total}. You need 80% to pass. Retakes are allowed.</p><button class="btn" data-a="cestart">RETAKE THE QUIZ</button>`:`<p style="margin:0 0 12px">Multiple choice questions on today's talks. You'll see the right answers at the end.</p><button class="btn" data-a="cestart">START THE CE QUIZ</button>`}
+  </div>
+  <div class="rule-h">Step 2: Event Feedback</div>
+  ${S.feedback?`<div class="box"><span class="pill ok">Thank you</span><p style="margin-top:10px">Your feedback is in.</p></div>`:
   `<div class="box"><label class="lbl" style="margin-top:0">How likely are you to recommend AudConnect to a colleague?</label>
   <div class="nps">${[...Array(11).keys()].map(n=>`<button data-nps="${n}" aria-pressed="${S.nps===n}">${n}</button>`).join("")}</div>
   <div class="small muted" style="display:flex;justify-content:space-between;margin-top:4px"><span>Not likely</span><span>Very likely</span></div>
   <label class="lbl" for="f1">What topic should we cover next year?</label><input id="f1" class="field" maxlength="300">
   <label class="lbl" for="f2">Anything we should do differently?</label><textarea id="f2" class="field" rows="3" maxlength="1000"></textarea>
-  <div style="height:14px"></div><button class="btn" data-a="overall">SUBMIT FEEDBACK</button></div>`}`}
+  <div style="height:14px"></div><button class="btn" data-a="overall">SUBMIT FEEDBACK</button></div>`}
+  ${ce.passed&&S.feedback?`<div style="height:16px"></div><button class="btn" data-a="cert">VIEW MY CERTIFICATE</button>`:""}
+  ${rate}`}
+function CEQuiz(){const Q=S.quiz;if(!Q||!Q.qs)return `<p class="muted">Loading the quiz...</p>`;
+  if(Q.result){const R=Q.result;const byId={};R.review.forEach(r=>byId[r.id]=r);
+    return `<div class="box" style="text-align:center"><p class="tag">Your score</p><div style="font-size:56px;font-weight:900;line-height:1">${R.score}/${R.total}</div>
+    <p style="margin:10px 0 0;font-weight:800;color:${R.passed?"var(--ok)":"var(--red-t)"}">${R.passed?"Passed. Well done!":"Not quite. You need "+R.pass_pct+"% to pass."}</p></div>
+    <div class="rule-h">Review</div>${Q.qs.map((q,n)=>{const r=byId[q.id]||{};return `<div class="box" style="margin-bottom:10px"><p class="small muted" style="margin:0">Question ${n+1}</p><p style="font-weight:700;margin:4px 0 8px">${esc(q.question)}</p>
+      ${q.options.map((o,i)=>`<div class="opt ${i===r.answer?"right":i===r.picked?"wrong":""}" style="cursor:default"><span>${esc(o)}${i===r.answer?" ✓":i===r.picked?" ✕ your answer":""}</span></div>`).join("")}</div>`}).join("")}
+    <button class="btn" data-a="ceclose">${R.passed?"DONE":"BACK"}</button>${R.passed?"":`<div style="height:8px"></div><button class="btn ghost" data-a="cestart">TRY AGAIN</button>`}`}
+  const q=Q.qs[Q.i];const pick=Q.answers[q.id];
+  return `<div class="box"><p class="tag">Question ${Q.i+1} of ${Q.qs.length}</p><div class="hbar" style="margin:6px 0 12px"><i style="width:${(Q.i)/Q.qs.length*100}%"></i></div>
+  <p style="font-weight:800;font-size:17px;margin:0 0 12px">${esc(q.question)}</p>
+  ${q.options.map((o,i)=>`<button class="opt" data-cepick="${i}" aria-pressed="${pick===i}"><span>${esc(o)}</span></button>`).join("")}
+  <div style="display:flex;gap:8px;margin-top:6px">${Q.i>0?`<button class="btn ghost" data-a="ceprev">BACK</button>`:""}<button class="btn" data-a="${Q.i+1<Q.qs.length?"cenext":"cesubmit"}" ${pick==null?"disabled":""}>${Q.i+1<Q.qs.length?"NEXT":"SUBMIT"}</button></div></div>
+  <button class="btn ghost" style="margin-top:10px" data-a="ceclose">EXIT QUIZ</button>`}
 
 function Me(){const m=S.me;return `<h1 class="page-title">My Badge</h1><div style="height:14px"></div>
   <div class="badge"><div class="band"><img class="logo-img" src="${IMG.logo}" alt="">AUDCONNECT 2026</div><div class="body">
   <div class="nm">${esc(m.fn)}<br>${esc(m.ln)}</div><p class="muted" style="margin-top:8px">${esc(m.co)}</p>
   <p style="margin-top:12px"><span class="pill">${m.member==="yes"?"SAPS Member":"Guest"}</span> ${S.committee?'<span class="pill">Organiser</span> ':""}<span class="pill ok">Checked in</span></p></div></div>
   <div class="rule-h">Certificate</div>
-  ${S.feedback?`<button class="btn" data-a="cert">VIEW CERTIFICATE</button>`:`<div class="box"><p class="small">Unlocks when you submit the event feedback.</p><button class="btn ghost" data-tab="fb">GO TO FEEDBACK</button></div>`}
+  ${S.feedback&&S.ce.passed?`<button class="btn" data-a="cert">VIEW CERTIFICATE</button>`:`<div class="box"><p class="small">Unlocks when you pass the CE quiz (80% or more) and submit the event feedback. Both open at 5:00 PM on 10 October.</p><button class="btn ghost" data-tab="fb">GO TO CE &amp; FEEDBACK</button></div>`}
+  <div class="rule-h">About SAPS</div><button class="btn ghost" data-a="welcome">WELCOME, VISION &amp; COMMITTEE</button>
   <div class="rule-h">Organisers</div>${S.committee?`<button class="btn" data-a="admin">OPEN ORGANISER DASHBOARD</button>`:`<button class="btn" data-a="orgcode">ORGANISER ONLY</button><p class="small muted" style="margin-top:8px">For the SAPS committee. You'll need the organiser code.</p>`}
   <div style="height:18px"></div><button class="btn ghost" data-a="signout">NOT YOU? CHECK IN AS SOMEONE ELSE</button>`}
 
+const CARDS=["welcome","vmv","committee"];
+function WelcomeCard(k){
+  if(k==="welcome")return `<div class="ig-top"><img class="logo-img" src="${IMG.logo}" alt=""><b>SAPS Executive Committee</b></div>
+   <div class="ig-body"><h2>Welcome to AudConnect 2026, and Happy World Audiologist Day!</h2>
+   <p>We're delighted to have you with us. In the spirit of this year's theme, NextGen Audiology, this event app was built with the help of AI, from the programme to live Q&amp;A. Explore, ask questions and join in.</p>
+   <div class="hosts"><div><img src="${IMG.c_ss}" alt=""><b>Sadrina Shah</b></div><div><img src="${IMG.c_su}" alt=""><b>Su Junqiang</b></div></div>
+   <p class="ig-small">Your hosts today</p><p class="sig">SAPS Executive Committee 2025-26</p></div>`;
+  if(k==="vmv")return `<div class="ig-top"><img class="logo-img" src="${IMG.logo}" alt=""><b>About the Society</b></div>
+   <div class="ig-body vmv"><span class="ab-t">Vision</span><p>${esc(SOCIETY.vision)}</p><span class="ab-t">Mission</span><p>${esc(SOCIETY.mission)}</p><span class="ab-t">Core Values</span><p>${SOCIETY.values.map(esc).join(" | ")}</p></div>`;
+  return `<div class="ig-top"><img class="logo-img" src="${IMG.logo}" alt=""><b>Know Your SAPS Committee</b></div>
+   <div class="ig-body"><div class="cgrid">${COMMITTEE.map(([p,n,r])=>`<div><img src="${IMG[p]}" alt=""><b>${esc(n)}</b><span>${esc(r)}</span></div>`).join("")}</div><p class="sig">2025-2026 Committee</p></div>`}
+function Welcome(){const i=S.welcome;const k=CARDS[i];
+  $("#welcome").innerHTML=`<div class="ig-card" role="dialog" aria-label="Welcome message">${WelcomeCard(k)}
+  <div class="ig-foot"><div class="ig-react"><button data-react="like" aria-label="Thumbs up">👍</button><button data-react="love" aria-label="Heart">❤️</button></div>
+  <p class="ig-hint">Softly tap 👍 or ❤️ to move to the next</p><div class="ig-dots">${CARDS.map((_,n)=>`<i class="${n===i?"on":""}"></i>`).join("")}</div></div></div>`;
+  $("#welcome").classList.add("open")}
+function openWelcome(){S.welcome=0;Welcome()}
 function OrgCode(){return `<h2 style="margin-top:0;font-weight:900;text-transform:uppercase">Organiser only</h2>
   <p class="small muted">Enter the organiser code from the SAPS committee.</p>
   <label class="lbl" for="oc">Organiser code</label><input id="oc" class="field" autocomplete="off" autocapitalize="characters" spellcheck="false">
@@ -289,7 +331,7 @@ function Stage(){const v=S.stageLocal||S.stage.view;let body="";
   if(v==="photos"){const ps=S.photos.slice(0,6);body=`<h3>Photo wall <span style="font-size:.5em;color:var(--red-t)">#AudConnect2026</span></h3><div class="wall">${ps.map(p=>`<figure><img src="${photoSrc(p)}" alt=""><figcaption>${esc(p.author_name)}</figcaption></figure>`).join("")}</div>`}
   if(v==="lb"){body=`<h3>Trivia leaderboard</h3>${S.board.map((r,i)=>`<div class="sq"><b>${i+1}</b><span style="flex:1">${esc(r.display_name)}</span><span>${r.score}</span></div>`).join("")||"<p>No scores yet</p>"}`}
   $("#stage").innerHTML=`<div class="hd"><div class="logo-row"><img class="logo-img" style="width:48px;height:48px" src="${IMG.logo}" alt=""><div class="wordmark">AUDCONNECT 2026<b>NEXTGEN AUDIOLOGY</b></div></div><span class="muted" style="font-weight:600">Join in at audconnect2026.com</span></div>
-  <div class="main">${body}</div><div class="ctl">${[["photos","Photos"],["poll","Poll"],["cloud","Word cloud"],["qa","Questions"],["lb","Leaderboard"]].map(([k,l])=>`<button data-stage="${k}" aria-pressed="${v===k}">${l}</button>`).join("")}<button data-a="stageclose">Exit</button></div>`}
+  <div class="main">${body}</div><div class="ctl">${[["photos","Photos"],["poll","Poll"],["cloud","Word cloud"],["qa","Questions"]].map(([k,l])=>`<button data-stage="${k}" aria-pressed="${v===k}">${l}</button>`).join("")}<button data-a="stageclose">Exit</button></div>`}
 
 /* ============ Organiser dashboard (SAPSADMIN check in only) ============ */
 function Admin(){const t=S.adTab;const tabs=[["over","Overview"],["qa","Q&A"],["eng","Engage"],["fb","Feedback"],["att","Attendees"]];
@@ -302,10 +344,10 @@ function AdOver(){const A=S.ad.attendees,n=A.length,mem=A.filter(a=>a.saps_membe
   return `<div class="kpis"><div class="kpi red"><div class="v">${n}</div><div class="l">Checked in</div></div>
   <div class="kpi"><div class="v">${S.ad.feedback.length}</div><div class="l">Feedback forms</div></div>
   <div class="kpi"><div class="v">${mem}</div><div class="l">SAPS members</div></div><div class="kpi"><div class="v">${n-mem}</div><div class="l">Guests</div></div>
-  <div class="kpi"><div class="v">${S.ad.questions.filter(q=>!q.hidden).length}</div><div class="l">Questions asked</div></div><div class="kpi"><div class="v">${pv}</div><div class="l">Poll votes</div></div></div>
+  <div class="kpi"><div class="v">${S.ad.questions.filter(q=>!q.hidden).length}</div><div class="l">Questions asked</div></div><div class="kpi"><div class="v">${(S.adx||[]).filter(x=>x.certificate_eligible).length}</div><div class="l">Certificates earned</div></div></div>
   ${now?`<div class="rule-h">Now</div><div class="redbox"><span class="small" style="font-weight:800;letter-spacing:.08em"><span class="dot"></span>ON STAGE</span><span class="sess-title" style="margin-top:6px">${esc(now.title)}</span><span class="small muted">${esc(now.by||"")}</span></div>`:""}
   <div class="rule-h">Stage Screen</div><div class="box"><p class="small muted">Choose what the LED wall shows. Open the stage screen on the laptop connected to the LED wall.</p>
-  <div class="acts">${[["photos","Photo wall"],["poll","Poll results"],["cloud","Word cloud"],["qa","Top questions"],["lb","Leaderboard"]].map(([k,l])=>`<button class="act ${S.stage.view===k?"on":""}" data-adstage="${k}">${l}</button>`).join("")}</div>
+  <div class="acts">${[["photos","Photo wall"],["poll","Poll results"],["cloud","Word cloud"],["qa","Top questions"]].map(([k,l])=>`<button class="act ${S.stage.view===k?"on":""}" data-adstage="${k}">${l}</button>`).join("")}</div>
   <div style="height:12px"></div><button class="btn" data-a="stage">OPEN STAGE SCREEN</button></div>
   <div class="rule-h">Who's Here</div><div class="box">${top.length?top.map(([c,v])=>`<div style="margin-bottom:10px"><div class="small" style="display:flex;justify-content:space-between"><span>${esc(c)}</span><b>${v}</b></div><div class="hbar"><i style="width:${v/mx*100}%"></i></div></div>`).join(""):'<span class="muted small">No check ins yet</span>'}</div>`}
 function AdQA(){const qs=S.ad.questions.filter(q=>q.session_id===S.qaSession).sort((a,b)=>(a.answered-b.answered)||b.votes-a.votes);const pin=S.stage.pinned_question;
@@ -323,8 +365,7 @@ function AdEng(){const t=S.pollCounts.reduce((a,b)=>a+b,0);
   <div class="rule-h">Word Cloud</div><div class="box"><p class="small muted">Tap a word to hide it if it's inappropriate.</p>
   <div class="acts">${S.ad.words.map(w=>`<button class="act" style="${w.hidden?"opacity:.4;text-decoration:line-through":""}" data-hideword="${w.id}" data-v="${!w.hidden}">${esc(w.word)} ${w.hidden?"↺":"✕"}</button>`).join("")||'<span class="muted small">No words yet</span>'}</div>
   <div class="acts" style="margin-top:12px"><button class="act ${S.stage.cloud_open?"on":""}" data-a="togcloud">${S.stage.cloud_open?"Accepting words":"Closed"}</button><button class="act" data-adstage="cloud">Show on screen</button></div></div>
-  <div class="rule-h">Trivia</div><div class="box"><p class="small muted">Winners are announced at the Excellence Award segment.</p>
-  <div class="acts"><button class="act" data-adstage="lb">Show leaderboard on screen</button></div></div>`}
+  <div class="rule-h">CE Quiz</div><div class="box">${(()=>{const X=S.adx||[];const tried=X.filter(x=>x.ce_attempts>0).length,pass=X.filter(x=>x.ce_passed).length,cert=X.filter(x=>x.certificate_eligible).length;return `<p style="margin:0">${tried} attempted, <b>${pass} passed</b>, <b>${cert}</b> eligible for a certificate.</p><p class="small muted" style="margin:8px 0 0">Opens for attendees at 5:00 PM on 10 October, closes 11:59 PM. Committee members can test it any time.</p>`})()}</div>`}
 function AdFB(){const sc=S.ad.feedback.map(f=>f.nps);const pro=sc.filter(x=>x>=9).length,det=sc.filter(x=>x<=6).length;const nps=sc.length?Math.round((pro-det)/sc.length*100):null;
   const R={};S.ad.ratings.forEach(r=>{(R[r.session_id]=R[r.session_id]||[]).push(r)});
   const comments=[...S.ad.feedback.flatMap(f=>[f.improve,f.next_topic?"Next year: "+f.next_topic:null]),...S.ad.ratings.map(r=>r.comment?(SESSIONS.find(s=>s.id===r.session_id)||{}).n?`Talk ${SESSIONS.find(s=>s.id===r.session_id).n}: ${r.comment}`:`Panel: ${r.comment}`:null)].filter(Boolean).slice(0,40);
@@ -339,17 +380,18 @@ function AdAtt(){const q=S.attQ.toLowerCase();const list=S.ad.attendees.filter(a
   <p class="small muted" style="margin:10px 0">${list.length} checked in</p>
   <div class="list"><table class="tbl">${list.slice(0,60).map(a=>`<tr><td><b>${esc(a.first_name)} ${esc(a.last_name)}</b><br><span class="muted">${esc(a.company)}</span></td><td style="text-align:right;white-space:nowrap"><span class="pill ${a.saps_member?"":"ok"}">${a.saps_member?"Member":"Guest"}</span><br><span class="muted small">${tm(a.checked_in_at)}</span></td></tr>`).join("")||'<tr><td class="muted">No check ins yet</td></tr>'}</table></div>
   ${list.length>60?`<p class="small muted" style="margin-top:8px">Showing 60 of ${list.length}. Search to find someone.</p>`:""}
-  <div style="height:14px"></div><button class="btn ghost" data-a="exportatt">EXPORT ATTENDANCE (CSV)</button>
+  <div style="height:14px"></div><button class="btn" data-a="exportxlsx">EXPORT EXCEL (ATTENDANCE, CE &amp; FEEDBACK)</button>
   <p class="small muted" style="margin-top:10px">Use the attendance export for CPE point records. Walk ins can check in on any phone at the desk.</p>`}
 
 function downloadCSV(name,rows){const csv=rows.map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\r\n");
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 
 /* ============ Render ============ */
+function renderQuiz(){render();scrollTo(0,0)}
 function render(){
   if(S.admin){$("#root").innerHTML=Admin();const a=$("#aqs");if(a)a.onchange=e=>{S.qaSession=e.target.value;render()};const aq=$("#attq");if(aq)aq.oninput=e=>{S.attQ=e.target.value;const p=e.target.selectionStart;render();const n=$("#attq");n.focus();n.setSelectionRange(p,p)};return}
   if(!S.me){$("#root").innerHTML=`<div class="app" style="padding-bottom:0">${Register()}</div>`;return}
-  const tabs={prog:["Programme",Prog],qa:["Q&A",QA],play:["Engage",Engage],fb:["Feedback",FB],me:["Me",Me]};
+  const tabs={prog:["Programme",Prog],qa:["Q&A",QA],play:["Engage",Engage],fb:["CE",()=>S.quiz?`<h1 class="page-title">CE Quiz</h1><div style="height:12px"></div>`+CEQuiz():FB()],me:["Me",Me]};
   $("#root").innerHTML=`<div class="app"><header class="top"><div class="logo-row"><img class="logo-img" src="${IMG.logo}" alt="SAPS"><div class="wordmark">AUDCONNECT 2026<b>NEXTGEN AUDIOLOGY</b></div></div><button class="hdr-btn" data-tab="me">${esc(S.me.fn)}</button></header><main>${tabs[S.tab][1]()}</main></div>
   <nav class="tabs" aria-label="Main"><div class="in">${Object.entries(tabs).map(([k,[l]])=>`<button data-tab="${k}" ${S.tab===k?'aria-current="page"':""}>${I[k]}${l}</button>`).join("")}</div></nav>`;
   const qs=$("#qs");if(qs)qs.onchange=e=>{S.qaSession=e.target.value;render()};
@@ -371,6 +413,9 @@ document.addEventListener("click",async e=>{
   if(d.up){const id=+d.up;const had=S.myVotes.has(id);had?S.myVotes.delete(id):S.myVotes.add(id);const q=S.q.find(x=>x.id===id);if(q)q.votes+=had?-1:1;render();
     try{await rpc("toggle_question_vote",{p_token:S.token,p_question:id})}catch(x){toast(errMsg(x))}return}
   if(d.seg){S.playSeg=d.seg;render();return}
+  if(d.react){const k=CARDS[S.welcome];b.classList.add("pop");rpc("react_card",{p_token:S.token,p_card:k,p_reaction:d.react}).catch(()=>{});if(!S.cardsSeen.includes(k))S.cardsSeen.push(k);
+    setTimeout(()=>{if(S.welcome+1<CARDS.length){S.welcome++;Welcome()}else{$("#welcome").classList.remove("open");S.welcome=null;toast("Enjoy AudConnect 2026!")}},350);return}
+  if(d.cepick!==undefined){const q=S.quiz.qs[S.quiz.i];S.quiz.answers[q.id]=+d.cepick;renderQuiz();return}
   if(d.like){const id=+d.like;const had=S.myLikes.has(id);had?S.myLikes.delete(id):S.myLikes.add(id);S.likes[id]=(S.likes[id]||0)+(had?-1:1);render();
     try{await rpc("toggle_photo_like",{p_token:S.token,p_photo:id})}catch(x){toast(errMsg(x))}return}
   if(d.poll){const i=+d.poll;S.myPoll=i;S.pollCounts[i]++;render();try{await rpc("cast_poll_vote",{p_token:S.token,p_poll:POLL.id,p_option:i});toast("Vote in")}catch(x){S.myPoll=null;toast(errMsg(x))}await loadPublic().catch(()=>{});render();return}
@@ -391,7 +436,7 @@ document.addEventListener("click",async e=>{
       S.busy=true;render();
       try{const res=await rpc("check_in",{p_first:r.fn,p_last:r.ln,p_company:r.co,p_member:r.member==="yes"});
         S.token=res.token;try{localStorage.setItem("ac26_token",S.token)}catch(x){}
-        await loadMine();S.busy=false;S.tab="prog";render();scrollTo(0,0);
+        await loadMine();S.busy=false;S.tab="prog";render();scrollTo(0,0);if(S.cardsSeen.length<CARDS.length)setTimeout(openWelcome,400);
         toast(res.returning?`Welcome back, ${res.first_name}`:"You're checked in. Enjoy lunch!")}
       catch(x){S.busy=false;render();toast(errMsg(x))}break}
     case "showform":S.showForm=true;render();scrollTo(0,0);rpc("company_suggestions",{}).then(c=>{S.cos=c||[];const dl=$("#cos");if(dl)dl.innerHTML=S.cos.map(v=>`<option value="${esc(v)}">`).join("")}).catch(()=>{});setTimeout(()=>{const f=$("#fn");f&&f.focus()},50);break;
@@ -415,6 +460,12 @@ document.addEventListener("click",async e=>{
         S._pendingBlob=null;close();await loadPublic();render();scrollTo(0,0);toast("Photo posted")}
       catch(x){pb.disabled=false;pb.textContent="POST PHOTO";toast(errMsg(x))}break}
     case "cert":sheet(Cert());break;
+    case "welcome":openWelcome();break;
+    case "cestart":{S.quiz={qs:null,i:0,answers:{},result:null};S.tab="fb";renderQuiz();try{S.quiz.qs=await rpc("ce_get_questions",{p_token:S.token})}catch(x){S.quiz=null;render();toast(errMsg(x));break}renderQuiz();break}
+    case "cenext":S.quiz.i++;renderQuiz();break;
+    case "ceprev":S.quiz.i--;renderQuiz();break;
+    case "cesubmit":{b.disabled=true;try{const r=await rpc("ce_submit",{p_token:S.token,p_answers:S.quiz.answers});S.quiz.result=r;await loadMine().catch(()=>{});renderQuiz()}catch(x){b.disabled=false;toast(errMsg(x))}break}
+    case "ceclose":S.quiz=null;render();scrollTo(0,0);break;
     case "orgcode":sheet(OrgCode());setTimeout(()=>{const f=$("#oc");f&&f.focus()},50);break;
     case "unlock":{const code=($("#oc").value||"").trim();if(!code){toast("Enter the organiser code");return}b.disabled=true;
       try{const ok=await rpc("unlock_organiser",{p_token:S.token,p_code:code});
@@ -427,6 +478,11 @@ document.addEventListener("click",async e=>{
     case "adexit":S.admin=false;render();scrollTo(0,0);break;
     case "togpoll":await adminAct("admin_set_stage",{p_view:null,p_pinned:null,p_poll_open:!S.stage.poll_open,p_cloud_open:null});break;
     case "togcloud":await adminAct("admin_set_stage",{p_view:null,p_pinned:null,p_poll_open:null,p_cloud_open:!S.stage.cloud_open});break;
+    case "exportxlsx":{try{await loadAdmin()}catch(x){}const t=d=>d?new Date(d).toLocaleString("en-SG",{timeZone:"Asia/Singapore",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}):"";
+      const rows=(S.adx||[]).map(x=>({"First Name":x.first_name,"Last Name":x.last_name,"Company":x.company,"SAPS Member":x.saps_member?"Yes":x.saps_member===false?"No":"","Committee":x.is_committee?"Yes":"","Check In Time (SGT)":t(x.checked_in_at),"Feedback Submitted (SGT)":t(x.feedback_first_at),"Feedback Last Updated (SGT)":t(x.feedback_last_at),"Recommend Score (0-10)":x.nps??"","CE Attempts":x.ce_attempts||0,"CE Best Score":x.ce_best_score!=null?`${x.ce_best_score}/${x.ce_total}`:"","CE Passed":x.ce_passed?"Yes":"No","CE Passed Time (SGT)":t(x.ce_passed_at),"CE Last Attempt (SGT)":t(x.ce_last_at),"Certificate Eligible":x.certificate_eligible?"Yes":"No"}));
+      if(window.XLSX){const ws=XLSX.utils.json_to_sheet(rows);ws["!cols"]=Object.keys(rows[0]||{a:1}).map(k=>({wch:Math.max(12,k.length+2)}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"AudConnect 2026");XLSX.writeFile(wb,"AudConnect2026_attendance_CE_feedback.xlsx")}
+      else{const keys=Object.keys(rows[0]||{});downloadCSV("AudConnect2026_attendance_CE_feedback.csv",[keys,...rows.map(r=>keys.map(k=>r[k]))])}
+      break}
     case "exportatt":downloadCSV("audconnect2026-attendance.csv",[["First name","Last name","Company","SAPS member","Checked in (SGT)"],...S.ad.attendees.map(a=>[a.first_name,a.last_name,a.company,a.saps_member?"Yes":a.saps_member===false?"No":"",new Date(a.checked_in_at).toLocaleString("en-SG",{timeZone:"Asia/Singapore"})])]);break;
     case "exportfb":downloadCSV("audconnect2026-feedback.csv",[["Type","Session","Score","Comment","Next year topic"],...S.ad.feedback.map(f=>["Event","",f.nps,f.improve,f.next_topic]),...S.ad.ratings.map(r=>["Session",(SESSIONS.find(s=>s.id===r.session_id)||{}).title||r.session_id,r.stars,r.comment,""])]);break;
   }
