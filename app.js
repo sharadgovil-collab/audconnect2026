@@ -305,18 +305,18 @@ function Me(){const m=S.me;return `<h1 class="page-title">My Badge</h1><div styl
 const CARDS=["welcome","vmv","committee"];
 function WelcomeCard(k){
   if(k==="welcome")return `<div class="ig-top"><img class="logo-img" src="${IMG.logo}" alt=""><b>SAPS Executive Committee</b></div>
-   <div class="ig-body"><h2>Welcome to AudConnect 2026, and Happy World Audiologist Day!</h2>
+   <div class="ig-body"><h2>Happy World Audiologist Day &amp; Welcome to AUDCONNECT 2026!</h2>
    <p>We're delighted to have you with us. In the spirit of this year's theme, NextGen Audiology, this event app was built with the help of AI, from the programme to live Q&amp;A. Explore, ask questions and join in.</p>
-   <div class="hosts"><div><img src="${IMG.c_ss}" alt=""><b>Sadrina Shah</b></div><div><img src="${IMG.c_su}" alt=""><b>Su Junqiang</b></div></div>
-   <p class="ig-small">Your hosts today</p><p class="sig">SAPS Executive Committee 2025-26</p></div>`;
+   <img class="hostpic" src="${IMG.hosts}" alt="Su Junqiang and Sadrina Shah at the podium">
+   <p class="hostcap"><b>Su Junqiang &amp; Sadrina Shah</b><br><span>Your hosts today</span></p></div>`;
   if(k==="vmv")return `<div class="ig-top"><img class="logo-img" src="${IMG.logo}" alt=""><b>About the Society</b></div>
    <div class="ig-body vmv"><span class="ab-t">Vision</span><p>${esc(SOCIETY.vision)}</p><span class="ab-t">Mission</span><p>${esc(SOCIETY.mission)}</p><span class="ab-t">Core Values</span><p>${SOCIETY.values.map(esc).join(" | ")}</p></div>`;
-  return `<div class="ig-top"><img class="logo-img" src="${IMG.logo}" alt=""><b>Know Your SAPS Committee</b></div>
-   <div class="ig-body"><div class="cgrid">${COMMITTEE.map(([p,n,r])=>`<div><img src="${IMG[p]}" alt=""><b>${esc(n)}</b><span>${esc(r)}</span></div>`).join("")}</div><p class="sig">2025-2026 Committee</p></div>`}
+  return `<div class="ig-top"><img class="logo-img" src="${IMG.logo}" alt=""><b>SAPS 2025-26 Executive Committee</b></div>
+   <div class="ig-body"><div class="cgrid">${COMMITTEE.map(([p,n,r])=>`<div><img src="${IMG[p]}" alt=""><b>${esc(n)}</b><span>${esc(r)}</span></div>`).join("")}</div></div>`}
 function Welcome(){const i=S.welcome;const k=CARDS[i];
   $("#welcome").innerHTML=`<div class="ig-card" role="dialog" aria-label="Welcome message">${WelcomeCard(k)}
   <div class="ig-foot"><div class="ig-react"><button data-react="like" aria-label="Thumbs up">👍</button><button data-react="love" aria-label="Heart">❤️</button></div>
-  <p class="ig-hint">Softly tap 👍 or ❤️ to move to the next</p><div class="ig-dots">${CARDS.map((_,n)=>`<i class="${n===i?"on":""}"></i>`).join("")}</div></div></div>`;
+  <p class="ig-hint">Tap 👍 or ❤️ to move to the next</p><div class="ig-dots">${CARDS.map((_,n)=>`<i class="${n===i?"on":""}"></i>`).join("")}</div></div></div>`;
   $("#welcome").classList.add("open")}
 function openWelcome(){S.welcome=0;Welcome()}
 function OrgCode(){return `<h2 style="margin-top:0;font-weight:900;text-transform:uppercase">Organiser only</h2>
