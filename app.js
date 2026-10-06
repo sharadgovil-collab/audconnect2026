@@ -303,7 +303,7 @@ const fmtSG=d=>new Date(d).toLocaleString("en-SG",{timeZone:"Asia/Singapore",day
 const FB_SCALES=[["satisfaction","How satisfied are you with the overall conference?","Very dissatisfied","Extremely satisfied"],["expectations","How well did the conference meet your expectations?","Did not meet","Exceeded the expectations"]];
 const FB_STARS=[["food","Food"],["venue","Venue"],["panel","Panel Discussion"],["posters","Posters"],["booths","Booths"],["flow","Programme Flow and Duration"]];
 const FB_TEXT=[["valuable","Which session(s) were the most valuable to you?"],["future","What topics would you like to see for future AudConnect?"],["other","Any other feedback for the organising committee?"]];
-function FBForm(){const F=S.fbf;return `<p class="small muted" style="margin:0 0 4px">All questions are required. Talks are rated separately below.</p>
+function FBForm(){const F=S.fbf;return `<p class="small muted" style="margin:0 0 4px">All questions are required. Rate the talks below, then tap Submit Feedback at the bottom.</p>
   ${FB_SCALES.map(([k,q,lo,hi])=>`<label class="lbl">${q}</label><div class="scale5">${[1,2,3,4,5].map(n=>`<button data-fbs="${k}:${n}" aria-pressed="${F[k]===n}">${n}</button>`).join("")}</div><div class="small muted" style="display:flex;justify-content:space-between;margin-top:4px"><span>${lo}</span><span>${hi}</span></div>`).join("")}
   <label class="lbl">Rate each part of the event</label><div class="fbstars">${FB_STARS.map(([k,l])=>`<div class="fbst"><span>${l}</span><span class="stars sm">${[1,2,3,4,5].map(n=>`<button class="star ${(F[k]||0)>=n?"on":""}" data-fbs="${k}:${n}" aria-label="${l} ${n} star${n>1?"s":""}">${I.star}</button>`).join("")}</span></div>`).join("")}</div>
   ${FB_TEXT.map(([k,q])=>`<label class="lbl" for="ft_${k}">${q}</label><textarea id="ft_${k}" class="field" rows="2" maxlength="1000">${esc(F[k]||"")}</textarea>`).join("")}`}
@@ -314,15 +314,15 @@ function FB(){const done=rateable().filter(s=>S.ratings[s.id]).length;const W=S.
   <div class="redbox" style="margin-top:16px;text-align:center"><div style="font-size:34px">🔒</div><p style="font-weight:800;margin:6px 0 4px">Not open yet</p><p class="small muted" style="margin:0">The SAPS team will open the CE quiz and event feedback shortly. Pass the quiz (80% or more) and submit your feedback to receive your Certificate of Participation.</p></div>${rate}`;
   const ce=S.ce;
   return `<h1 class="page-title">CE &amp; Feedback</h1><p class="tag">Earn your certificate</p>
-  <div class="redbox" style="margin-top:14px"><b style="display:block;margin-bottom:4px">To obtain your 4 CPE points</b><span class="small">Everyone needs to complete both steps: pass the CE quiz (80% or more) and complete the event feedback form. Your Certificate of Participation unlocks once both are done.</span></div>
+  <div class="redbox" style="margin-top:14px"><span class="small">To receive 4 CPE points, please complete the CE Quiz (passing score 80% or more) and also complete the event feedback form. Certificate will unlock once both are done.</span></div>
   <div class="rule-h">Step 1: CE Quiz</div><div class="box">
    ${ce.passed?`<span class="pill ok">Passed</span><p style="margin:10px 0 0">Best score ${ce.best}/${ce.total}. Well done!</p>`:ce.attempts?`<span class="pill">Not yet passed</span><p style="margin:10px 0 12px">Best score so far ${ce.best}/${ce.total}. You need 80% to pass. Retakes are allowed.</p><button class="btn" data-a="cestart">RETAKE THE QUIZ</button>`:`<p style="margin:0 0 12px">Multiple choice questions on today's talks. You'll see the right answers at the end.</p><button class="btn" data-a="cestart">START THE CE QUIZ</button>`}
   </div>
   <div class="rule-h">Step 2: Event Feedback</div>
   ${S.feedback?`<div class="box"><span class="pill ok">Thank you</span><p style="margin-top:10px">Your feedback is in.</p></div>`:
-  `<div class="box fbf">${FBForm()}<div style="height:14px"></div><button class="btn" data-a="overall">SUBMIT FEEDBACK</button></div>`}
-  ${ce.passed&&S.feedback?`<div style="height:16px"></div><button class="btn" data-a="cert">VIEW MY CERTIFICATE</button>`:""}
-  ${rate}`}
+  `<div class="box fbf">${FBForm()}</div>${rate}<div style="height:16px"></div><button class="btn" data-a="overall">SUBMIT FEEDBACK</button>`}
+  ${S.feedback?rate:""}
+  ${ce.passed&&S.feedback?`<div style="height:16px"></div><button class="btn" data-a="cert">VIEW MY CERTIFICATE</button>`:""}`}
 function CEQuiz(){const Q=S.quiz;if(!Q||!Q.qs)return `<p class="muted">Loading the quiz...</p>`;
   if(Q.result){const R=Q.result;const byId={};R.review.forEach(r=>byId[r.id]=r);
     return `<div class="box" style="text-align:center"><p class="tag">Your score</p><div style="font-size:56px;font-weight:900;line-height:1">${R.score}/${R.total}</div>
@@ -345,13 +345,12 @@ function Me(){const m=S.me;return `<h1 class="page-title">My Badge</h1><div styl
   <div class="about"><div class="ab"><span class="ab-t">Vision</span><p>${esc(SOCIETY.vision)}</p></div>
   <div class="ab"><span class="ab-t">Mission</span><p>${esc(SOCIETY.mission)}</p></div>
   <div class="ab"><span class="ab-t">Core Values</span><div class="vals">${SOCIETY.values.map(v=>`<span>${esc(v)}</span>`).join("")}</div></div></div>
-  <div style="height:10px"></div><button class="btn ghost" data-a="welcome">WELCOME, VISION &amp; COMMITTEE</button>
   <div class="rule-h">Certificate</div>
   ${S.feedback&&S.ce.passed?`<button class="btn" data-a="cert">VIEW CERTIFICATE</button>`:`<div class="box"><p class="small">To obtain your CPE points and certificate, pass the CE quiz (80% or more) and complete the event feedback form, both in the CE tab.</p><button class="btn ghost" data-tab="fb">GO TO CE &amp; FEEDBACK</button></div>`}
   <div style="height:22px"></div><button class="btn ghost" data-a="logoutask">LOG OUT</button>
   <div class="org-mini">${S.committee?`<button class="linkbtn" data-a="admin">Open organiser dashboard</button>`:`<button class="linkbtn" data-a="orgcode">Organiser only</button>`}<span>For the SAPS committee</span></div>`}
 
-const CARDS=["welcome","vmv","committee"];
+const CARDS=["welcome","committee"];
 function WelcomeSlide(k){
   if(k==="welcome")return `<div class="ws ws-host"><img src="${IMG.hosts}" alt="Su Junqiang and Sadrina Shah, your hosts"><div class="ws-ov"><span>AUDCONNECT 2026</span><h2>Happy World Audiologist Day &amp; Welcome to AUDCONNECT 2026!</h2><p>Your hosts today: Su Junqiang &amp; Sadrina Shah</p></div></div>`;
   if(k==="vmv")return `<div class="ws ws-navy"><span class="ws-k">About the Society</span><b class="ab-t">Vision</b><p>${esc(SOCIETY.vision)}</p><b class="ab-t">Mission</b><p>${esc(SOCIETY.mission)}</p><b class="ab-t">Core Values</b><p>${SOCIETY.values.map(esc).join(" | ")}</p></div>`;
@@ -366,7 +365,7 @@ function Welcome(){const i=S.welcome||0;const n=(S.postLikes||{})["welcome-post"
   <div class="ag-acts"><button class="ag-ic heart ${liked?"on":""}" data-wlike="1" aria-pressed="${liked}" aria-label="Like">${AG.heart}</button><button class="ag-ic" data-cmfocus="welcome" aria-label="Comment">${AG.bubble}</button>
    <span class="ag-dots">${CARDS.map((_,k)=>`<i class="${k===i?"on":""}"></i>`).join("")}</span></div>
   <p class="ag-likes">${n} like${n===1?"":"s"}</p>
-  <p class="ag-cap"><b>audconnect2026</b> Happy World Audiologist Day! We're delighted to have you with us.${S.capOpen?` In the spirit of this year's theme, NextGen Audiology, this event app was built with the help of AI, from the programme to live Q&amp;A. Explore, ask questions and join in. Swipe to meet the Society and your 2025-26 Executive Committee. <span class="ag-tag">#AudConnect2026 #WorldAudiologistDay</span>`:` <button class="ag-morebtn" data-capmore="1">… more</button>`}</p>
+  <p class="ag-cap"><b>audconnect2026</b> Happy World Audiologist Day! We're delighted to have you with us.${S.capOpen?` In the spirit of this year's theme, NextGen Audiology, this event app was built with the help of AI, from the programme to live Q&amp;A. Explore, ask questions and join in. Swipe to meet your SAPS 2025-26 Executive Committee. <span class="ag-tag">#AudConnect2026 #WorldAudiologistDay</span>`:` <button class="ag-morebtn" data-capmore="1">… more</button>`}</p>
   ${agComments("welcome",2)}
   <p class="ag-time">10 OCTOBER 2026</p>
   </article>
