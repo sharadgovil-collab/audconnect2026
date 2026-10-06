@@ -89,7 +89,7 @@ async function loadPublic(){
   if(p.data){const pc=POLL.o.map(()=>0);p.data.forEach(r=>{if(pc[r.option_index]!=null)pc[r.option_index]++});S.pollCounts=pc}
   if(w.data)S.words=w.data.map(r=>r.word);
   if(t.data)S.board=t.data;
-  if(ph.data)S.photos=ph.data;
+  if(ph.data)S.photos=ph.data.filter(p=>!p.storage_path.startsWith("static/"));
   if(lk.data){const l={};lk.data.forEach(r=>l[r.photo_id]=(l[r.photo_id]||0)+1);S.likes=l}
   if(st.data)S.stage=st.data;
   if(cm&&cm.data){const g={};cm.data.forEach(r=>(g[r.target]=g[r.target]||[]).push(r));S.comments=g}
@@ -138,7 +138,8 @@ const I={
  star:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2.8 2.9 5.9 6.5.9-4.7 4.6 1.1 6.4L12 17.6l-5.8 3 1.1-6.4-4.7-4.6 6.5-.9z"/></svg>',
  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M7 14h2M11 14h2M15 14h2M7 17h2M11 17h2"/></svg>',
  pin:'<svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>'
-};
+};I.ag=I.cam;
+
 const Hero=()=>`<div class="hero"><img class="logo-big" src="${IMG.logo}" alt="Society for Audiology Professionals Singapore">
   <div class="kick"><span>${EVENT.kicker}</span></div><img class="ngimg" src="${IMG.ng}" alt="NextGen Audiology"><div class="tl">${EVENT.theme.toUpperCase()}</div>
   <div class="facts"><div class="fact"><span class="ico">${I.cal}</span><span><b>10 OCT 2026</b><span class="small muted">${EVENT.time}</span></span></div>
@@ -238,12 +239,13 @@ function agComments(target,limit){const L=S.comments[target]||[];const open=S.op
   ${show.map(r=>`<p class="ag-cm"><b>${esc(r.author_name)}</b> ${esc(r.body)}</p>`).join("")}
   <div class="ag-add"><input class="ag-in" data-cmin="${target}" maxlength="200" placeholder="Add a comment…" aria-label="Add a comment"><button class="ag-post" data-cmpost="${target}">Post</button></div>`}
 function agBrand(){return `<div class="ag-brand"><span>Audigram</span></div>`}
-function Engage(){const g=S.playSeg;return `<h1 class="page-title">Engage</h1><p class="tag">Ask, vote and share live</p><div style="height:14px"></div>
-  <div class="seg"><button data-seg="qa" aria-pressed="${g==="qa"}">Q&amp;A</button><button data-seg="poll" aria-pressed="${g==="poll"}">Poll</button><button data-seg="cloud" aria-pressed="${g==="cloud"}">Words</button><button data-seg="photos" aria-pressed="${g==="photos"}">Audigram</button></div>
-  ${g==="qa"?QA():g==="photos"?Photos():g==="poll"?Poll():Cloud()}`}
+function Engage(){const g=S.playSeg;return `<h1 class="page-title">Engage</h1><p class="tag">Ask and vote live</p><div style="height:14px"></div>
+  <div class="seg"><button data-seg="qa" aria-pressed="${g==="qa"}">Q&amp;A</button><button data-seg="poll" aria-pressed="${g==="poll"}">Poll</button><button data-seg="cloud" aria-pressed="${g==="cloud"}">Words</button></div>
+  ${g==="poll"?Poll():g==="cloud"?Cloud():QA()}`}
 function Photos(){return `<div class="ag-head"><span class="ag-word">Audigram</span><span class="small muted">audconnect2026</span></div>
   <label class="upl" for="pfile">${I.cam}<b>Share your event photos on Audigram</b><span class="small muted">Snap a moment, add a caption, and the best ones appear on the big screen.</span></label>
   <input id="pfile" type="file" accept="image/*" style="position:absolute;left:-9999px" aria-label="Choose a photo">
+  ${S.photos.length?"":`<div class="ag-card ag-empty"><div class="ag-empty-ic">${I.cam}</div><b>Share Photos</b><p>When people share photos from AudConnect 2026, they will appear here.</p><label class="ag-empty-btn" for="pfile">Share your first photo</label></div>`}
   <div class="feed ag-feed">${S.photos.map(p=>{const t="photo:"+p.id;const n=S.likes[p.id]||0;const liked=S.myLikes.has(p.id);return `<article class="ag-card">
    <header class="ag-top">${agAvatar(p.author_name,p.author_name==="SAPS Committee"?IMG.logo:null)}<div><b>${esc(p.author_name)}</b><span>AudConnect 2026 · Suntec Singapore</span></div></header>
    <div class="ag-media"><img src="${photoSrc(p)}" alt="${esc(p.caption||"Event photo")}" loading="lazy" data-dbl="${p.id}"></div>
@@ -439,8 +441,8 @@ function renderQuiz(){render();scrollTo(0,0)}
 function render(){
   if(S.admin){$("#root").innerHTML=Admin();const a=$("#aqs");if(a)a.onchange=e=>{S.adQaSes=e.target.value;render()};const aq=$("#attq");if(aq)aq.oninput=e=>{S.attQ=e.target.value;const p=e.target.selectionStart;render();const n=$("#attq");n.focus();n.setSelectionRange(p,p)};return}
   if(!S.me){$("#root").innerHTML=`<div class="app" style="padding-bottom:0">${Register()}</div>`;return}
-  if(S.tab==="qa"){S.tab="play";S.playSeg="qa"}
-  const tabs={prog:["Programme",Prog],play:["Engage",Engage],fb:["CE",()=>S.quiz?`<h1 class="page-title">CE Quiz</h1><div style="height:12px"></div>`+CEQuiz():FB()],me:["Me",Me]};
+  if(S.tab==="qa"){S.tab="play";S.playSeg="qa"}if(S.playSeg==="photos"){S.playSeg="qa";S.tab="ag"}
+  const tabs={prog:["Programme",Prog],play:["Engage",Engage],ag:["Audigram",Photos],fb:["CE",()=>S.quiz?`<h1 class="page-title">CE Quiz</h1><div style="height:12px"></div>`+CEQuiz():FB()],me:["Me",Me]};
   $("#root").innerHTML=`<div class="app"><header class="top"><div class="logo-row"><img class="logo-img" src="${IMG.logo}" alt="SAPS"><div class="wordmark">AUDCONNECT 2026<b>NEXTGEN AUDIOLOGY</b></div></div><button class="hdr-btn" data-tab="me">${esc(S.me.fn)}</button></header><main>${tabs[S.tab][1]()}</main></div>
   <nav class="tabs" aria-label="Main"><div class="in">${Object.entries(tabs).map(([k,[l]])=>`<button data-tab="${k}" ${S.tab===k?'aria-current="page"':""}>${I[k]}${l}</button>`).join("")}</div></nav>`;
   const qs=$("#qs");if(qs)qs.onchange=e=>{S.qaSession=e.target.value;render()};
@@ -461,7 +463,7 @@ document.addEventListener("click",async e=>{
   if(d.sort){S.qaSort=d.sort;render();return}
   if(d.up){const id=+d.up;const had=S.myVotes.has(id);had?S.myVotes.delete(id):S.myVotes.add(id);const q=S.q.find(x=>x.id===id);if(q)q.votes+=had?-1:1;render();
     try{await rpc("toggle_question_vote",{p_token:S.token,p_question:id})}catch(x){toast(errMsg(x))}return}
-  if(d.seg){S.playSeg=d.seg;render();return}
+  if(d.seg){if(d.seg==="photos"){S.tab="ag";render();scrollTo(0,0);return}S.playSeg=d.seg;render();return}
   if(d.certone!==undefined){const x=(S.adx||[]).filter(r=>r.certificate_eligible)[+d.certone];if(!x)return;b.disabled=true;const t=b.textContent;b.textContent="...";
     try{saveBlob(await certPDF(x.first_name,x.last_name),certName(x.first_name,x.last_name))}catch(e){toast("Couldn't create the PDF")}b.disabled=false;b.textContent=t;return}
   if(d.wsgo!==undefined){const tr=$("#wsTrack");tr.scrollTo({left:(+d.wsgo)*tr.clientWidth,behavior:"smooth"});return}
