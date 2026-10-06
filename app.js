@@ -50,7 +50,7 @@ const EVENT_DATE="2026-10-10";
 let S={
   token:null,me:null,committee:false,reg:{member:null},tab:"prog",qaSession:"t1",qaSort:"top",playSeg:"photos",
   q:[],myVotes:new Set(),myQs:new Set(),pollCounts:POLL.o.map(()=>0),myPoll:null,words:[],myWord:null,
-  board:[],myTrivia:null,trivia:{i:0,picked:null,score:0},photos:[],likes:{},myLikes:new Set(),ce:{attempts:0,best:null,total:null,passed:false},cardsSeen:[],win:{open:false},quiz:null,welcome:null,
+  board:[],myTrivia:null,trivia:{i:0,picked:null,score:0},photos:[],likes:{},myLikes:new Set(),ce:{attempts:0,best:null,total:null,passed:false},cardsSeen:[],comments:{},postLikes:{},openCm:{},win:{open:false},quiz:null,welcome:null,
   stage:{view:"photos",pinned_question:null,poll_open:true,cloud_open:true},ratings:{},feedback:null,nps:null,
   admin:false,adTab:"over",ad:null,attQ:"",stageLocal:null
 };
@@ -73,7 +73,7 @@ async function rpc(fn,args){const {data,error}=await sb.rpc(fn,args);if(error)th
 
 /* ============ Loading shared data ============ */
 async function loadPublic(){
-  const [q,v,p,w,t,ph,lk,st]=await Promise.all([
+  const [q,v,p,w,t,ph,lk,st,cm,pl]=await Promise.all([
     sb.from("questions").select("id,session_id,author_name,body,answered,created_at"),
     sb.from("question_votes").select("question_id"),
     sb.from("poll_votes").select("option_index").eq("poll_id",POLL.id),
@@ -81,7 +81,9 @@ async function loadPublic(){
     sb.from("trivia_scores").select("display_name,score,finished_at").order("score",{ascending:false}).order("finished_at").limit(10),
     sb.from("photos").select("id,author_name,caption,storage_path,created_at").order("created_at",{ascending:false}),
     sb.from("photo_likes").select("photo_id"),
-    sb.from("stage_state").select("*").eq("id",1).maybeSingle()
+    sb.from("stage_state").select("*").eq("id",1).maybeSingle(),
+    sb.from("post_comments").select("id,target,author_name,body,created_at").order("created_at"),
+    sb.rpc("post_likes")
   ]);
   if(q.data){const c={};(v.data||[]).forEach(r=>c[r.question_id]=(c[r.question_id]||0)+1);S.q=q.data.map(x=>({...x,votes:c[x.id]||0}))}
   if(p.data){const pc=POLL.o.map(()=>0);p.data.forEach(r=>{if(pc[r.option_index]!=null)pc[r.option_index]++});S.pollCounts=pc}
@@ -90,6 +92,8 @@ async function loadPublic(){
   if(ph.data)S.photos=ph.data;
   if(lk.data){const l={};lk.data.forEach(r=>l[r.photo_id]=(l[r.photo_id]||0)+1);S.likes=l}
   if(st.data)S.stage=st.data;
+  if(cm&&cm.data){const g={};cm.data.forEach(r=>(g[r.target]=g[r.target]||[]).push(r));S.comments=g}
+  if(pl&&pl.data)S.postLikes=pl.data;
 }
 async function loadMine(){
   const d=await rpc("my_state",{p_token:S.token});
@@ -100,7 +104,7 @@ async function loadMine(){
   S.committee=p.committee===true;S.ce=d.ce||S.ce;S.cardsSeen=d.cards_seen||[];
   try{S.win=await rpc("window_status",{p_token:S.token})}catch(e){}
 }
-async function loadAdmin(){if(!S.committee)return;const [a,x]=await Promise.all([rpc("admin_dashboard",{p_token:S.token}),rpc("admin_export",{p_token:S.token})]);S.ad=a;S.adx=x}
+async function loadAdmin(){if(!S.committee)return;const [a,x,cm]=await Promise.all([rpc("admin_dashboard",{p_token:S.token}),rpc("admin_export",{p_token:S.token}),rpc("admin_comments",{p_token:S.token}).catch(()=>[])]);S.ad=a;S.adx=x;S.adc=cm||[]}
 
 let _t=null;
 setInterval(async()=>{if(S.token&&!(S.win&&S.win.open)){try{const w=await rpc("window_status",{p_token:S.token});if(w.open!==S.win.open){S.win=w;softRender()}}catch(e){}}},60000);
@@ -200,17 +204,17 @@ function Spk(k){const v=SPEAKERS[k];const ss=SESSIONS.filter(s=>(s.spk||[]).incl
   ${(v.bio||[]).map(p=>`<p class="bio">${esc(p)}</p>`).join("")}
   <div class="rule-h" style="margin-top:18px">Speaking At</div>${ss.map(s=>`<p><span class="sess-title">${esc(s.title)}</span><span class="small muted">${fmt(s.time)} to ${fmt(s.end)} PM</span></p>`).join("")}
   <button class="btn ghost" data-a="close">CLOSE</button>`}
-function Cert(){return `<div class="certwrap"><div class="pcert" role="img" aria-label="Certificate of participation for ${esc(S.me.fn)} ${esc(S.me.ln)}">
-  <img class="lg" src="${IMG.clogo}" alt="">
-  <div class="ttl">CERTIFICATE OF PARTICIPATION</div>
-  <div class="l1 it">This is to certify that</div>
-  <div class="nm">${esc(S.me.fn)} ${esc(S.me.ln)}</div>
-  <div class="body it">attended AudConnect 2026: NextGen Audiology, Driving Efficiency, Enhancing Care<br>held on 10 October 2026 at Suntec Singapore</div>
-  <div class="sig"><div class="s">Sharad Govil</div><div class="ln"></div><div class="n">Dr. Sharad Govil, AuD<br>President, SAPS</div></div>
-  <img class="seal" src="${IMG.cseal}" alt="">
-  </div></div>
-  <p class="small muted" style="margin-top:10px;text-align:center;font-style:italic">${EVENT.cpe}</p>
-  <div style="height:8px"></div><button class="btn ghost" data-a="close">DONE</button>`}
+/* Certificate of Participation: SAPS template (cert-bg.webp) with the attendee's name set in Century Gothic style */
+const CERT={w:1655,h:2338,cx:.4997,cy:.5440,maxW:.80,size:.0385};
+let _certFont=null;
+function certFontReady(){if(!_certFont){try{const f=new FontFace("CertGothic","url(https://cdn.jsdelivr.net/gh/ArtifexSoftware/urw-base35-fonts@20200910/fonts/URWGothic-Demi.otf)",{weight:"700"});_certFont=f.load().then(x=>{document.fonts.add(x);return true}).catch(()=>false)}catch(e){_certFont=Promise.resolve(false)}}return _certFont}
+const certFull=(fn,ln)=>`${fn} ${ln}`.replace(/\s+/g," ").trim().toUpperCase();
+function certScale(name){const cv=document.createElement("canvas").getContext("2d");cv.font=`700 100px CertGothic, "Century Gothic", Montserrat, sans-serif`;const w=cv.measureText(name).width/100;const base=CERT.size*CERT.h;return Math.min(1,(CERT.maxW*CERT.w)/(w*base))}
+function certHTML(fn,ln){const name=certFull(fn,ln);const k=certScale(name);
+  return `<div class="certwrap"><div class="pc3" role="img" aria-label="Certificate of participation for ${esc(name)}"><img src="cert-bg.webp" alt=""><div class="pc3n" style="font-size:${(CERT.size*CERT.h/CERT.w*100*k).toFixed(3)}cqw">${esc(name)}</div></div></div>`}
+function Cert(){return certHTML(S.me.fn,S.me.ln)+`
+  <p class="small" style="margin:12px 0 0;text-align:center;font-style:italic;color:#DCE1EE">${esc(EVENT.cpe)}</p>
+  <div style="height:12px"></div><button class="btn" data-a="certpdf">DOWNLOAD PDF</button><div style="height:8px"></div><button class="btn ghost" data-a="close">DONE</button>`}
 
 function QA(){const qs=S.q.filter(q=>q.session_id===S.qaSession).sort((a,b)=>S.qaSort==="top"?(a.answered-b.answered)||b.votes-a.votes:b.id-a.id);
   return `<h1 class="page-title">Q&amp;A</h1><p class="tag">Ask the speakers</p>
@@ -222,19 +226,33 @@ function QA(){const qs=S.q.filter(q=>q.session_id===S.qaSession).sort((a,b)=>S.q
   <div class="seg" style="margin-top:22px"><button data-sort="top" aria-pressed="${S.qaSort==="top"}">Most popular</button><button data-sort="new" aria-pressed="${S.qaSort==="new"}">Newest</button></div>
   <div class="list">${qs.length?qs.map(q=>`<div class="q"><button class="up" data-up="${q.id}" aria-pressed="${S.myVotes.has(q.id)}" aria-label="Upvote">${I.up}${q.votes}</button><div style="flex:1"><div>${esc(q.body)}</div><div class="small muted">${esc(q.author_name)}${q.answered?' <span class="pill ok">Answered</span>':""}</div></div></div>`).join(""):`<div class="q"><span class="muted">No questions yet. Be the first to ask.</span></div>`}</div>`}
 
+const ago=d=>{const s=Math.max(1,(Date.now()-new Date(d))/1000);if(s<60)return "JUST NOW";const m=s/60;if(m<60)return Math.floor(m)+(Math.floor(m)===1?" MINUTE AGO":" MINUTES AGO");const h=m/60;if(h<24)return Math.floor(h)+(Math.floor(h)===1?" HOUR AGO":" HOURS AGO");return new Date(d).toLocaleDateString("en-SG",{day:"numeric",month:"long"}).toUpperCase()};
+const AG={heart:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.6s-7.6-4.6-9.5-9.3C1.1 7.8 3.3 4.2 6.9 4.2c2.1 0 3.6 1.2 5.1 3 1.5-1.8 3-3 5.1-3 3.6 0 5.8 3.6 4.4 7.1-1.9 4.7-9.5 9.3-9.5 9.3z"/></svg>',
+  bubble:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.7 12a8.6 8.6 0 0 1-12.6 7.6L3.3 21l1.4-4.6A8.6 8.6 0 1 1 20.7 12z"/></svg>'};
+function agAvatar(name,img){return img?`<span class="ag-av ring"><img src="${img}" alt=""></span>`:`<span class="ag-av ring"><b>${esc(ini(name||"?"))}</b></span>`}
+function agComments(target,limit){const L=S.comments[target]||[];const open=S.openCm[target];const show=open?L:L.slice(-(limit||2));
+  return `${L.length>show.length?`<button class="ag-more" data-cmopen="${target}">View all ${L.length} comments</button>`:""}
+  ${show.map(r=>`<p class="ag-cm"><b>${esc(r.author_name)}</b> ${esc(r.body)}</p>`).join("")}
+  <div class="ag-add"><input class="ag-in" data-cmin="${target}" maxlength="200" placeholder="Add a comment…" aria-label="Add a comment"><button class="ag-post" data-cmpost="${target}">Post</button></div>`}
+function agBrand(){return `<div class="ag-brand"><span>Audigram</span></div>`}
 function Engage(){const g=S.playSeg;return `<h1 class="page-title">Engage</h1><p class="tag">Join in live</p><div style="height:14px"></div>
-  <div class="seg"><button data-seg="photos" aria-pressed="${g==="photos"}">Photos</button><button data-seg="poll" aria-pressed="${g==="poll"}">Poll</button><button data-seg="cloud" aria-pressed="${g==="cloud"}">Words</button></div>
+  <div class="seg"><button data-seg="photos" aria-pressed="${g==="photos"}">Audigram</button><button data-seg="poll" aria-pressed="${g==="poll"}">Poll</button><button data-seg="cloud" aria-pressed="${g==="cloud"}">Words</button></div>
   ${g==="photos"?Photos():g==="poll"?Poll():Cloud()}`}
-function Photos(){return `<label class="upl" for="pfile">${I.cam}<b>Take or upload a photo</b><span class="small muted">Share your AudConnect moments. The best ones appear on the big screen.</span></label>
+function Photos(){return `<div class="ag-head"><span class="ag-word">Audigram</span><span class="small muted">audconnect2026</span></div>
+  <label class="upl" for="pfile">${I.cam}<b>Share your event photos on Audigram</b><span class="small muted">Snap a moment, add a caption, and the best ones appear on the big screen.</span></label>
   <input id="pfile" type="file" accept="image/*" style="position:absolute;left:-9999px" aria-label="Choose a photo">
-  <p class="small muted" style="margin:12px 0;text-align:center">Posting elsewhere too? Tag <b style="color:#fff">#AudConnect2026</b></p>
-  <div class="feed">${S.photos.map(p=>`<div class="post"><img src="${photoSrc(p)}" alt="${esc(p.caption||"Event photo")}" loading="lazy"><div class="meta">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><b>${esc(p.author_name)}</b><button class="like" data-like="${p.id}" aria-pressed="${S.myLikes.has(p.id)}" aria-label="Like">${I.heart}${S.likes[p.id]||0}</button></div>
-  ${p.caption?`<p class="small" style="margin:6px 0 0">${esc(p.caption)}</p>`:""}</div></div>`).join("")}</div>`}
+  <div class="feed ag-feed">${S.photos.map(p=>{const t="photo:"+p.id;const n=S.likes[p.id]||0;const liked=S.myLikes.has(p.id);return `<article class="ag-card">
+   <header class="ag-top">${agAvatar(p.author_name,p.author_name==="SAPS Committee"?IMG.logo:null)}<div><b>${esc(p.author_name)}</b><span>AudConnect 2026 · Suntec Singapore</span></div></header>
+   <div class="ag-media"><img src="${photoSrc(p)}" alt="${esc(p.caption||"Event photo")}" loading="lazy" data-dbl="${p.id}"></div>
+   <div class="ag-acts"><button class="ag-ic heart ${liked?"on":""}" data-like="${p.id}" aria-pressed="${liked}" aria-label="Like">${AG.heart}</button><button class="ag-ic" data-cmfocus="${t}" aria-label="Comment">${AG.bubble}</button></div>
+   <p class="ag-likes">${n} like${n===1?"":"s"}</p>
+   ${p.caption?`<p class="ag-cap"><b>${esc(p.author_name)}</b> ${esc(p.caption)}</p>`:""}
+   ${agComments(t)}
+   <p class="ag-time">${ago(p.created_at)}</p></article>`}).join("")}</div>`}
 function PhotoCompose(){return `<img src="${S._pendingUrl}" alt="" style="width:100%;max-height:50vh;object-fit:contain;border-radius:12px;background:#000">
   <label class="lbl" for="pcap">Caption (optional)</label><input id="pcap" class="field" maxlength="120" placeholder="Say something about this moment">
   <p class="small muted" style="margin-top:10px">Photos are visible to everyone at the event. Please ask before posting photos of others.</p>
-  <button class="btn" data-a="postphoto" id="pbtn">POST PHOTO</button>`}
+  <button class="btn" data-a="postphoto" id="pbtn">SHARE ON AUDIGRAM</button>`}
 function Poll(){const t=S.pollCounts.reduce((a,b)=>a+b,0),vt=S.myPoll!==null||!S.stage.poll_open;return `<div class="box"><p style="font-weight:800;font-size:17px">${esc(POLL.q)}</p><p class="small muted">${t} vote${t===1?"":"s"} so far.${S.stage.poll_open?" Results show on the big screen.":" Voting is closed."}</p>
   ${POLL.o.map((o,i)=>{const pc=t?Math.round(S.pollCounts[i]/t*100):0;return `<button class="opt" data-poll="${i}" aria-pressed="${S.myPoll===i}" ${vt?"disabled":""}>${vt?`<i class="fill" style="width:${pc}%"></i>`:""}<span style="display:flex;justify-content:space-between"><span>${esc(o)}${S.myPoll===i?" ✓":""}</span>${vt?`<strong>${pc}%</strong>`:""}</span></button>`}).join("")}</div>`}
 function wordCounts(){const c={};S.words.forEach(w=>{const k=w.charAt(0).toUpperCase()+w.slice(1).toLowerCase();c[k]=(c[k]||0)+1});return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,40)}
@@ -303,21 +321,28 @@ function Me(){const m=S.me;return `<h1 class="page-title">My Badge</h1><div styl
   <div style="height:18px"></div><button class="btn ghost" data-a="signout">NOT YOU? CHECK IN AS SOMEONE ELSE</button>`}
 
 const CARDS=["welcome","vmv","committee"];
-function WelcomeCard(k){
-  if(k==="welcome")return `<div class="ig-top"><img class="logo-img" src="${IMG.logo}" alt=""><b>SAPS Executive Committee</b></div>
-   <div class="ig-body"><h2>Happy World Audiologist Day &amp; Welcome to AUDCONNECT 2026!</h2>
-   <p>We're delighted to have you with us. In the spirit of this year's theme, NextGen Audiology, this event app was built with the help of AI, from the programme to live Q&amp;A. Explore, ask questions and join in.</p>
-   <img class="hostpic" src="${IMG.hosts}" alt="Su Junqiang and Sadrina Shah at the podium">
-   <p class="hostcap"><b>Su Junqiang &amp; Sadrina Shah</b><br><span>Your hosts today</span></p></div>`;
-  if(k==="vmv")return `<div class="ig-top"><img class="logo-img" src="${IMG.logo}" alt=""><b>About the Society</b></div>
-   <div class="ig-body vmv"><span class="ab-t">Vision</span><p>${esc(SOCIETY.vision)}</p><span class="ab-t">Mission</span><p>${esc(SOCIETY.mission)}</p><span class="ab-t">Core Values</span><p>${SOCIETY.values.map(esc).join(" | ")}</p></div>`;
-  return `<div class="ig-top"><img class="logo-img" src="${IMG.logo}" alt=""><b>SAPS 2025-26 Executive Committee</b></div>
-   <div class="ig-body"><div class="cgrid">${COMMITTEE.map(([p,n,r])=>`<div><img src="${IMG[p]}" alt=""><b>${esc(n)}</b><span>${esc(r)}</span></div>`).join("")}</div></div>`}
-function Welcome(){const i=S.welcome;const k=CARDS[i];
-  $("#welcome").innerHTML=`<div class="ig-card" role="dialog" aria-label="Welcome message">${WelcomeCard(k)}
-  <div class="ig-foot"><div class="ig-react"><button data-react="like" aria-label="Thumbs up">👍</button><button data-react="love" aria-label="Heart">❤️</button></div>
-  <p class="ig-hint">Tap 👍 or ❤️ to move to the next</p><div class="ig-dots">${CARDS.map((_,n)=>`<i class="${n===i?"on":""}"></i>`).join("")}</div></div></div>`;
-  $("#welcome").classList.add("open")}
+function WelcomeSlide(k){
+  if(k==="welcome")return `<div class="ws ws-host"><img src="${IMG.hosts}" alt="Su Junqiang and Sadrina Shah, your hosts"><div class="ws-ov"><span>AUDCONNECT 2026</span><h2>Happy World Audiologist Day &amp; Welcome to AUDCONNECT 2026!</h2><p>Your hosts today: Su Junqiang &amp; Sadrina Shah</p></div></div>`;
+  if(k==="vmv")return `<div class="ws ws-navy"><span class="ws-k">About the Society</span><b class="ab-t">Vision</b><p>${esc(SOCIETY.vision)}</p><b class="ab-t">Mission</b><p>${esc(SOCIETY.mission)}</p><b class="ab-t">Core Values</b><p>${SOCIETY.values.map(esc).join(" | ")}</p></div>`;
+  return `<div class="ws ws-navy"><span class="ws-k">SAPS 2025-26 Executive Committee</span><div class="cgrid">${COMMITTEE.map(([p,n,r])=>`<div><img src="${IMG[p]}" alt=""><b>${esc(n)}</b><span>${esc(r)}</span></div>`).join("")}</div></div>`}
+function Welcome(){const i=S.welcome||0;const n=(S.postLikes||{})["welcome-post"]||0;const liked=S.cardsSeen.includes("welcome-post");
+  $("#welcome").innerHTML=`<div class="ag-wrap"><article class="ag-card ag-pop" role="dialog" aria-label="Welcome post">
+  <div class="ag-bar"><span class="ag-word">Audigram</span></div>
+  <header class="ag-top">${agAvatar("AC",IMG.logo)}<div><b>audconnect2026</b><span>Suntec Singapore</span></div></header>
+  <div class="ag-media sq"><div class="ws-track" id="wsTrack">${CARDS.map(WelcomeSlide).join("")}</div>
+   ${i>0?`<button class="ws-nav l" data-wsgo="${i-1}" aria-label="Previous">‹</button>`:""}${i<CARDS.length-1?`<button class="ws-nav r" data-wsgo="${i+1}" aria-label="Next">›</button>`:""}
+   <span class="ws-count">${i+1}/${CARDS.length}</span></div>
+  <div class="ag-acts"><button class="ag-ic heart ${liked?"on":""}" data-wlike="1" aria-pressed="${liked}" aria-label="Like">${AG.heart}</button><button class="ag-ic" data-cmfocus="welcome" aria-label="Comment">${AG.bubble}</button>
+   <span class="ag-dots">${CARDS.map((_,k)=>`<i class="${k===i?"on":""}"></i>`).join("")}</span></div>
+  <p class="ag-likes">${n} like${n===1?"":"s"}</p>
+  <p class="ag-cap"><b>audconnect2026</b> Happy World Audiologist Day! We're delighted to have you with us.${S.capOpen?` In the spirit of this year's theme, NextGen Audiology, this event app was built with the help of AI, from the programme to live Q&amp;A. Explore, ask questions and join in. Swipe to meet the Society and your 2025-26 Executive Committee. <span class="ag-tag">#AudConnect2026 #WorldAudiologistDay</span>`:` <button class="ag-morebtn" data-capmore="1">… more</button>`}</p>
+  ${agComments("welcome",2)}
+  <p class="ag-time">10 OCTOBER 2026</p>
+  </article>
+  <button class="btn ag-go" data-a="welcomedone">CONTINUE TO AUDCONNECT</button></div>`;
+  $("#welcome").classList.add("open");
+  const tr=$("#wsTrack");tr.scrollLeft=i*tr.clientWidth;
+  tr.onscroll=()=>{clearTimeout(tr._t);tr._t=setTimeout(()=>{const k=Math.round(tr.scrollLeft/tr.clientWidth);if(k!==S.welcome){S.welcome=k;const keep=document.activeElement&&document.activeElement.classList.contains("ag-in")?document.activeElement.value:null;Welcome();if(keep!=null){const f=$('[data-cmin="welcome"]');f.value=keep;f.focus()}}},120)}}
 function openWelcome(){S.welcome=0;Welcome()}
 function OrgCode(){return `<h2 style="margin-top:0;font-weight:900;text-transform:uppercase">Organiser only</h2>
   <p class="small muted">Enter the organiser code from the SAPS committee.</p>
@@ -328,10 +353,10 @@ function Stage(){const v=S.stageLocal||S.stage.view;let body="";
   if(v==="poll"){const t=S.pollCounts.reduce((a,b)=>a+b,0);body=`<h3>${esc(POLL.q)}</h3>${POLL.o.map((o,i)=>{const pc=t?Math.round(S.pollCounts[i]/t*100):0;return `<div class="srow"><div class="lab"><span>${esc(o)}</span><span>${pc}%</span></div><div class="bar"><i style="width:${pc}%"></i></div></div>`}).join("")}<p class="muted">${t} votes</p>`}
   if(v==="cloud")body=`<h3>${CLOUD_Q}</h3><div class="cloud" style="gap:10px 28px">${cloudHtml(true)}</div>`;
   if(v==="qa"){const s=nowSession();const sid=s&&s.rate?s.id:S.qaSession;const ss=SESSIONS.find(x=>x.id===sid);const pin=S.q.find(q=>q.id===S.stage.pinned_question);const qs=pin?[pin]:S.q.filter(q=>q.session_id===sid&&!q.answered).sort((a,b)=>b.votes-a.votes).slice(0,4);body=`<h3>${pin?"Now answering":"Top questions"}<br><span style="font-size:.5em;color:var(--red-t)">${esc(pin?SESSIONS.find(x=>x.id===pin.session_id).title:ss.title)}</span></h3>${qs.map(q=>`<div class="sq"><b>${q.votes}</b><span>${esc(q.body)}</span></div>`).join("")||"<p>No questions yet</p>"}`}
-  if(v==="photos"){const ps=S.photos.slice(0,6);body=`<h3>Photo wall <span style="font-size:.5em;color:var(--red-t)">#AudConnect2026</span></h3><div class="wall">${ps.map(p=>`<figure><img src="${photoSrc(p)}" alt=""><figcaption>${esc(p.author_name)}</figcaption></figure>`).join("")}</div>`}
+  if(v==="photos"){const ps=S.photos.slice(0,6);body=`<h3><span class="ag-word" style="font-size:1.4em">Audigram</span> <span style="font-size:.5em;color:var(--red-t)">#AudConnect2026</span></h3><div class="wall">${ps.map(p=>`<figure><img src="${photoSrc(p)}" alt=""><figcaption>${esc(p.author_name)}</figcaption></figure>`).join("")}</div>`}
   if(v==="lb"){body=`<h3>Trivia leaderboard</h3>${S.board.map((r,i)=>`<div class="sq"><b>${i+1}</b><span style="flex:1">${esc(r.display_name)}</span><span>${r.score}</span></div>`).join("")||"<p>No scores yet</p>"}`}
   $("#stage").innerHTML=`<div class="hd"><div class="logo-row"><img class="logo-img" style="width:48px;height:48px" src="${IMG.logo}" alt=""><div class="wordmark">AUDCONNECT 2026<b>NEXTGEN AUDIOLOGY</b></div></div><span class="muted" style="font-weight:600">Join in at audconnect2026.com</span></div>
-  <div class="main">${body}</div><div class="ctl">${[["photos","Photos"],["poll","Poll"],["cloud","Word cloud"],["qa","Questions"]].map(([k,l])=>`<button data-stage="${k}" aria-pressed="${v===k}">${l}</button>`).join("")}<button data-a="stageclose">Exit</button></div>`}
+  <div class="main">${body}</div><div class="ctl">${[["photos","Audigram"],["poll","Poll"],["cloud","Word cloud"],["qa","Questions"]].map(([k,l])=>`<button data-stage="${k}" aria-pressed="${v===k}">${l}</button>`).join("")}<button data-a="stageclose">Exit</button></div>`}
 
 /* ============ Organiser dashboard (SAPSADMIN check in only) ============ */
 function Admin(){const t=S.adTab;const tabs=[["over","Overview"],["qa","Q&A"],["eng","Engage"],["fb","Feedback"],["att","Attendees"]];
@@ -347,7 +372,7 @@ function AdOver(){const A=S.ad.attendees,n=A.length,mem=A.filter(a=>a.saps_membe
   <div class="kpi"><div class="v">${S.ad.questions.filter(q=>!q.hidden).length}</div><div class="l">Questions asked</div></div><div class="kpi"><div class="v">${(S.adx||[]).filter(x=>x.certificate_eligible).length}</div><div class="l">Certificates earned</div></div></div>
   ${now?`<div class="rule-h">Now</div><div class="redbox"><span class="small" style="font-weight:800;letter-spacing:.08em"><span class="dot"></span>ON STAGE</span><span class="sess-title" style="margin-top:6px">${esc(now.title)}</span><span class="small muted">${esc(now.by||"")}</span></div>`:""}
   <div class="rule-h">Stage Screen</div><div class="box"><p class="small muted">Choose what the LED wall shows. Open the stage screen on the laptop connected to the LED wall.</p>
-  <div class="acts">${[["photos","Photo wall"],["poll","Poll results"],["cloud","Word cloud"],["qa","Top questions"]].map(([k,l])=>`<button class="act ${S.stage.view===k?"on":""}" data-adstage="${k}">${l}</button>`).join("")}</div>
+  <div class="acts">${[["photos","Audigram wall"],["poll","Poll results"],["cloud","Word cloud"],["qa","Top questions"]].map(([k,l])=>`<button class="act ${S.stage.view===k?"on":""}" data-adstage="${k}">${l}</button>`).join("")}</div>
   <div style="height:12px"></div><button class="btn" data-a="stage">OPEN STAGE SCREEN</button></div>
   <div class="rule-h">Who's Here</div><div class="box">${top.length?top.map(([c,v])=>`<div style="margin-bottom:10px"><div class="small" style="display:flex;justify-content:space-between"><span>${esc(c)}</span><b>${v}</b></div><div class="hbar"><i style="width:${v/mx*100}%"></i></div></div>`).join(""):'<span class="muted small">No check ins yet</span>'}</div>`}
 function AdQA(){const qs=S.ad.questions.filter(q=>q.session_id===S.qaSession).sort((a,b)=>(a.answered-b.answered)||b.votes-a.votes);const pin=S.stage.pinned_question;
@@ -358,7 +383,9 @@ function AdQA(){const qs=S.ad.questions.filter(q=>q.session_id===S.qaSession).so
 function AdEng(){const t=S.pollCounts.reduce((a,b)=>a+b,0);
   return `<div class="rule-h" style="margin-top:6px">Photos</div><div class="box"><p class="small muted">Hide anything unsuitable. Hidden photos disappear from phones and the big screen.</p>
   <div class="thumbs">${S.ad.photos.map(p=>`<div class="thumb" style="${p.hidden?"opacity:.35":""}"><img src="${photoSrc(p)}" alt="" loading="lazy"><button class="act ${p.hidden?"":"on"}" data-hidephoto="${p.id}" data-v="${!p.hidden}">${p.hidden?"Unhide":"Hide"}</button></div>`).join("")||'<span class="muted small">No photos yet</span>'}</div>
-  <div class="acts" style="margin-top:12px"><button class="act" data-adstage="photos">Show photo wall on screen</button></div></div>
+  <div class="acts" style="margin-top:12px"><button class="act" data-adstage="photos">Show Audigram on screen</button></div></div>
+  <div class="rule-h">Audigram Comments</div><div class="box"><p class="small muted">Hide any comment that shouldn't be shown. It disappears from everyone's phone.</p>
+  <div class="list" style="margin-top:8px">${(S.adc||[]).slice(0,60).map(r=>`<div class="item" style="${r.hidden?"opacity:.4":""}"><span style="flex:1"><b style="display:block;font-size:13px">${esc(r.author_name)} <span class="muted" style="font-weight:500">on ${r.target==="welcome"?"welcome post":"photo"}</span></b><span class="small">${esc(r.body)}</span></span><button class="act ${r.hidden?"":"on"}" data-hidecm="${r.id}" data-v="${!r.hidden}">${r.hidden?"Unhide":"Hide"}</button></div>`).join("")||'<div class="item small muted">No comments yet</div>'}</div></div>
   <div class="rule-h">Live Poll</div><div class="box"><p style="font-weight:800">${esc(POLL.q)}</p>
   ${POLL.o.map((o,i)=>{const pc=t?Math.round(S.pollCounts[i]/t*100):0;return `<div style="margin-bottom:8px"><div class="small" style="display:flex;justify-content:space-between"><span>${esc(o)}</span><b>${S.pollCounts[i]} (${pc}%)</b></div><div class="hbar"><i style="width:${pc}%"></i></div></div>`}).join("")}
   <div class="acts"><button class="act ${S.stage.poll_open?"on":""}" data-a="togpoll">${S.stage.poll_open?"Voting open":"Voting closed"}</button><button class="act" data-adstage="poll">Show on screen</button></div></div>
@@ -380,9 +407,27 @@ function AdAtt(){const q=S.attQ.toLowerCase();const list=S.ad.attendees.filter(a
   <p class="small muted" style="margin:10px 0">${list.length} checked in</p>
   <div class="list"><table class="tbl">${list.slice(0,60).map(a=>`<tr><td><b>${esc(a.first_name)} ${esc(a.last_name)}</b><br><span class="muted">${esc(a.company)}</span></td><td style="text-align:right;white-space:nowrap"><span class="pill ${a.saps_member?"":"ok"}">${a.saps_member?"Member":"Guest"}</span><br><span class="muted small">${tm(a.checked_in_at)}</span></td></tr>`).join("")||'<tr><td class="muted">No check ins yet</td></tr>'}</table></div>
   ${list.length>60?`<p class="small muted" style="margin-top:8px">Showing 60 of ${list.length}. Search to find someone.</p>`:""}
+  <div class="rule-h">Certificates</div>${(()=>{const E=(S.adx||[]).filter(x=>x.certificate_eligible);return E.length?`<p class="small muted" style="margin:0 0 10px">${E.length} attendee${E.length>1?"s have":" has"} earned a certificate.</p>
+  <button class="btn" data-a="certall">DOWNLOAD ALL CERTIFICATES (ZIP)</button><div style="height:10px"></div>
+  <div class="list"><table class="tbl">${E.map((x,k)=>`<tr><td><b>${esc(x.first_name)} ${esc(x.last_name)}</b><br><span class="muted">${esc(x.company)}</span></td><td style="text-align:right"><button class="act on" data-certone="${k}">PDF</button></td></tr>`).join("")}</table></div>`:`<p class="small muted">No certificates earned yet. They appear here once an attendee passes the CE quiz and submits feedback.</p>`})()}
   <div style="height:14px"></div><button class="btn" data-a="exportxlsx">EXPORT EXCEL (ATTENDANCE, CE &amp; FEEDBACK)</button>
   <p class="small muted" style="margin-top:10px">Use the attendance export for CPE point records. Walk ins can check in on any phone at the desk.</p>`}
 
+let _certBg=null;
+function certBg(){if(!_certBg)_certBg=new Promise((ok,no)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=no;im.src="cert-bg.webp"});return _certBg}
+async function certPDF(fn,ln){
+  await certFontReady();const bg=await certBg();const name=certFull(fn,ln);
+  const cv=document.createElement("canvas");cv.width=CERT.w;cv.height=CERT.h;const g=cv.getContext("2d");
+  g.drawImage(bg,0,0,CERT.w,CERT.h);
+  const px=Math.round(CERT.size*CERT.h*certScale(name));
+  g.font=`700 ${px}px CertGothic, "Century Gothic", Montserrat, sans-serif`;g.fillStyle="#FFFFFF";g.textAlign="center";g.textBaseline="middle";
+  g.fillText(name,CERT.cx*CERT.w,CERT.cy*CERT.h);
+  const {jsPDF}=window.jspdf;const pdf=new jsPDF({orientation:"portrait",unit:"mm",format:"a4",compress:true});
+  pdf.addImage(cv.toDataURL("image/jpeg",.9),"JPEG",0,0,210,297);
+  pdf.setProperties({title:`AudConnect 2026 Certificate of Participation: ${name}`,author:"Society for Audiology Professionals Singapore"});
+  return pdf.output("blob")}
+const certName=(fn,ln)=>`AudConnect2026_Certificate_${(fn+"_"+ln).replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"")}.pdf`;
+function saveBlob(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},800)}
 function downloadCSV(name,rows){const csv=rows.map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\r\n");
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 
@@ -413,8 +458,17 @@ document.addEventListener("click",async e=>{
   if(d.up){const id=+d.up;const had=S.myVotes.has(id);had?S.myVotes.delete(id):S.myVotes.add(id);const q=S.q.find(x=>x.id===id);if(q)q.votes+=had?-1:1;render();
     try{await rpc("toggle_question_vote",{p_token:S.token,p_question:id})}catch(x){toast(errMsg(x))}return}
   if(d.seg){S.playSeg=d.seg;render();return}
-  if(d.react){const k=CARDS[S.welcome];b.classList.add("pop");rpc("react_card",{p_token:S.token,p_card:k,p_reaction:d.react}).catch(()=>{});if(!S.cardsSeen.includes(k))S.cardsSeen.push(k);
-    setTimeout(()=>{if(S.welcome+1<CARDS.length){S.welcome++;Welcome()}else{$("#welcome").classList.remove("open");S.welcome=null;toast("Enjoy AudConnect 2026!")}},350);return}
+  if(d.certone!==undefined){const x=(S.adx||[]).filter(r=>r.certificate_eligible)[+d.certone];if(!x)return;b.disabled=true;const t=b.textContent;b.textContent="...";
+    try{saveBlob(await certPDF(x.first_name,x.last_name),certName(x.first_name,x.last_name))}catch(e){toast("Couldn't create the PDF")}b.disabled=false;b.textContent=t;return}
+  if(d.wsgo!==undefined){const tr=$("#wsTrack");tr.scrollTo({left:(+d.wsgo)*tr.clientWidth,behavior:"smooth"});return}
+  if(d.capmore){S.capOpen=true;Welcome();return}
+  if(d.wlike){const had=S.cardsSeen.includes("welcome-post");if(had)S.cardsSeen=S.cardsSeen.filter(x=>x!=="welcome-post");else S.cardsSeen.push("welcome-post");
+    S.postLikes["welcome-post"]=((S.postLikes||{})["welcome-post"]||0)+(had?-1:1);Welcome();rpc("toggle_post_like",{p_token:S.token,p_card:"welcome-post"}).catch(x=>toast(errMsg(x)));return}
+  if(d.cmopen){S.openCm[d.cmopen]=true;$("#welcome").classList.contains("open")?Welcome():render();return}
+  if(d.cmfocus){const f=document.querySelector(`[data-cmin="${d.cmfocus}"]`);if(f){f.focus();f.scrollIntoView({block:"center",behavior:"smooth"})}return}
+  if(d.cmpost){const t=d.cmpost;const f=document.querySelector(`[data-cmin="${t}"]`);const body=(f&&f.value||"").trim();if(!body){toast("Write a comment first");return}b.disabled=true;
+    try{await rpc("add_comment",{p_token:S.token,p_target:t,p_body:body});(S.comments[t]=S.comments[t]||[]).push({author_name:S.me.fn+" "+(S.me.ln||"").charAt(0)+".",body,created_at:new Date().toISOString()});S.openCm[t]=true;toast("Comment posted")}catch(x){toast(errMsg(x))}
+    b.disabled=false;$("#welcome").classList.contains("open")?Welcome():render();return}
   if(d.cepick!==undefined){const q=S.quiz.qs[S.quiz.i];S.quiz.answers[q.id]=+d.cepick;renderQuiz();return}
   if(d.like){const id=+d.like;const had=S.myLikes.has(id);had?S.myLikes.delete(id):S.myLikes.add(id);S.likes[id]=(S.likes[id]||0)+(had?-1:1);render();
     try{await rpc("toggle_photo_like",{p_token:S.token,p_photo:id})}catch(x){toast(errMsg(x))}return}
@@ -428,6 +482,7 @@ document.addEventListener("click",async e=>{
   if(d.ans2){const id=+d.ans2,v=d.v==="true";if(v&&S.stage.pinned_question===id)await rpc("admin_set_stage",{p_token:S.token,p_view:null,p_pinned:null,p_poll_open:null,p_cloud_open:null,p_clear_pin:true}).catch(()=>{});await adminAct("admin_update_question",{p_id:id,p_answered:v,p_hidden:null});return}
   if(d.hide){await adminAct("admin_update_question",{p_id:+d.hide,p_answered:null,p_hidden:d.v==="true"});return}
   if(d.hidephoto){await adminAct("admin_set_hidden",{p_kind:"photo",p_id:+d.hidephoto,p_hidden:d.v==="true"});return}
+  if(d.hidecm){await adminAct("admin_set_hidden",{p_kind:"comment",p_id:+d.hidecm,p_hidden:d.v==="true"});return}
   if(d.hideword){await adminAct("admin_set_hidden",{p_kind:"word",p_id:+d.hideword,p_hidden:d.v==="true"});return}
   switch(d.a){
     case "checkin":{keepReg();const r=S.reg;
@@ -436,7 +491,7 @@ document.addEventListener("click",async e=>{
       S.busy=true;render();
       try{const res=await rpc("check_in",{p_first:r.fn,p_last:r.ln,p_company:r.co,p_member:r.member==="yes"});
         S.token=res.token;try{localStorage.setItem("ac26_token",S.token)}catch(x){}
-        await loadMine();S.busy=false;S.tab="prog";render();scrollTo(0,0);if(S.cardsSeen.length<CARDS.length)setTimeout(openWelcome,400);
+        await loadMine();S.busy=false;S.tab="prog";render();scrollTo(0,0);{let w=null;try{w=localStorage.getItem("ac26_welcomed")}catch(x){}if(!w)setTimeout(openWelcome,400)}
         toast(res.returning?`Welcome back, ${res.first_name}`:"You're checked in. Enjoy lunch!")}
       catch(x){S.busy=false;render();toast(errMsg(x))}break}
     case "showform":S.showForm=true;render();scrollTo(0,0);rpc("company_suggestions",{}).then(c=>{S.cos=c||[];const dl=$("#cos");if(dl)dl.innerHTML=S.cos.map(v=>`<option value="${esc(v)}">`).join("")}).catch(()=>{});setTimeout(()=>{const f=$("#fn");f&&f.focus()},50);break;
@@ -459,8 +514,15 @@ document.addEventListener("click",async e=>{
         await rpc("add_photo",{p_token:S.token,p_path:path,p_caption:$("#pcap").value});
         S._pendingBlob=null;close();await loadPublic();render();scrollTo(0,0);toast("Photo posted")}
       catch(x){pb.disabled=false;pb.textContent="POST PHOTO";toast(errMsg(x))}break}
-    case "cert":sheet(Cert());break;
+    case "cert":await certFontReady();sheet(Cert());break;
     case "welcome":openWelcome();break;
+    case "welcomedone":$("#welcome").classList.remove("open");S.welcome=null;try{localStorage.setItem("ac26_welcomed","1")}catch(x){}toast("Enjoy AudConnect 2026!");break;
+    case "certpdf":{b.disabled=true;b.textContent="PREPARING PDF...";try{saveBlob(await certPDF(S.me.fn,S.me.ln),certName(S.me.fn,S.me.ln))}catch(e){toast("Couldn't create the PDF")}b.disabled=false;b.textContent="DOWNLOAD PDF";break}
+    case "certall":{try{await loadAdmin()}catch(e){}const E=(S.adx||[]).filter(x=>x.certificate_eligible);if(!E.length){toast("No certificates yet");break}
+      b.disabled=true;const zip=new JSZip();const used={};
+      try{for(let k=0;k<E.length;k++){b.textContent=`PREPARING ${k+1} OF ${E.length}...`;let n=certName(E[k].first_name,E[k].last_name);if(used[n]){used[n]++;n=n.replace(".pdf",`_${used[n]}.pdf`)}else used[n]=1;zip.file(n,await certPDF(E[k].first_name,E[k].last_name))}
+        saveBlob(await zip.generateAsync({type:"blob"}),"AudConnect2026_Certificates.zip");toast(`${E.length} certificates downloaded`)}catch(e){toast("Couldn't create the certificates")}
+      b.disabled=false;b.textContent="DOWNLOAD ALL CERTIFICATES (ZIP)";break}
     case "cestart":{S.quiz={qs:null,i:0,answers:{},result:null};S.tab="fb";renderQuiz();try{S.quiz.qs=await rpc("ce_get_questions",{p_token:S.token})}catch(x){S.quiz=null;render();toast(errMsg(x));break}renderQuiz();break}
     case "cenext":S.quiz.i++;renderQuiz();break;
     case "ceprev":S.quiz.i--;renderQuiz();break;
@@ -487,6 +549,8 @@ document.addEventListener("click",async e=>{
     case "exportfb":downloadCSV("audconnect2026-feedback.csv",[["Type","Session","Score","Comment","Next year topic"],...S.ad.feedback.map(f=>["Event","",f.nps,f.improve,f.next_topic]),...S.ad.ratings.map(r=>["Session",(SESSIONS.find(s=>s.id===r.session_id)||{}).title||r.session_id,r.stars,r.comment,""])]);break;
   }
 });
+document.addEventListener("dblclick",e=>{const im=e.target.closest("[data-dbl]");if(!im)return;const id=+im.dataset.dbl;if(!S.myLikes.has(id)){const btn=document.querySelector(`[data-like="${id}"]`);btn&&btn.click()}});
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.classList&&e.target.classList.contains("ag-in")){e.preventDefault();const b=document.querySelector(`[data-cmpost="${e.target.dataset.cmin}"]`);b&&b.click()}});
 document.addEventListener("change",e=>{if(e.target.id!=="pfile"||!e.target.files[0])return;const f=e.target.files[0];const rd=new FileReader();
   rd.onload=()=>{const im=new Image();im.onload=()=>{const m=1600,sc=Math.min(1,m/Math.max(im.width,im.height));const c=document.createElement("canvas");c.width=Math.round(im.width*sc);c.height=Math.round(im.height*sc);c.getContext("2d").drawImage(im,0,0,c.width,c.height);
     c.toBlob(bl=>{if(!bl){toast("That photo couldn't be prepared");return}S._pendingBlob=bl;S._pendingUrl=c.toDataURL("image/jpeg",.6);sheet(PhotoCompose())},"image/jpeg",.82)};im.onerror=()=>toast("That file isn't a photo we can open");im.src=rd.result};rd.readAsDataURL(f);e.target.value=""});
