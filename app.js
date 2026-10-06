@@ -3,8 +3,8 @@
 const EVENT={kicker:"AUDCONNECT 2026",theme:"Driving Efficiency, Enhancing Care",date:"10 October 2026",time:"12:30 to 6:00 PM",lunch:"Lunch from 12:30 to 2:00 PM",room:"Level 3, Room 300-302",venue:"Suntec Singapore",cpe:"Participation in this event is recognised with 4 CPE points under Pillar 1 of the SAPS CPE program.",host:"Society for Audiology Professionals Singapore"};
 const SPEAKERS={
   sg:{name:"Dr. Sharad Govil",role:"President",org:"SAPS",bio:[]},
-  ss:{name:"Sadrina Shah",role:"Host & Assistant Treasurer",org:"SAPS",host:true,bio:[]},
-  su:{name:"Su Junqiang",role:"Host & Vice-President",org:"SAPS",host:true,bio:[]},
+  ss:{name:"Sadrina Shah",role:"Host",org:"SAPS",host:true,bio:[]},
+  su:{name:"Su Junqiang",role:"Host",org:"SAPS",host:true,bio:[]},
   jo:{name:"Jessica Ong",role:"Clinical Specialist",org:"Cochlear",bio:["Jessica holds a Master of Audiology and a Bachelor of Biomedical Science from the University of Auckland. With clinical experience across New Zealand and Singapore, she has extensive experience supporting patients with complex hearing loss and hearing implants. In her role with Cochlear, Jessica partners with clinicians and healthcare teams across the country to support cochlear implant services, foster strong clinical partnerships, and improve access to implantable hearing solutions and outcomes for people with significant hearing loss."]},
   rt:{name:"Renato Tan",role:"Business Development Manager",org:"Cochlear",bio:["Renato Tan completed his Master in Clinical Audiology at the University of Santo Tomas, Manila, in 2007. He moved to Singapore in 2010 to join Cochlear, helping Southeast Asian countries raise awareness of hearing implants and build local expertise. From 2017 he led Cochlear's Singapore team, working closely with hearing professionals and recipients. Since 2021 he has held a regional role for Cochlear's Acoustics portfolio, championing bone conduction solutions and meeting Baha recipients across seven countries. He will share how bone conduction technology has evolved to change many lives for the better."]},
   rh:{name:"Dr. Rebecca Heywood",role:"Senior Consultant ENT Surgeon",org:"The ENT Clinic",bio:["Dr Rebecca Heywood is a UK-trained ENT specialist and fellowship-trained Ear and Hearing Surgeon based at The ENT Clinic in Singapore. With over 25 years of experience across the UK, Australia and Singapore, she cares for adults and children with a wide range of ear and hearing problems, with particular expertise in hearing restoration and implantable hearing technologies.","She has established and led cochlear implant services, contributed to hearing research and implant development, and participated in World Health Organization ear and hearing care initiatives. Rebecca is also an active researcher and educator, passionate about improving hearing health and helping people stay connected throughout life."]},
@@ -190,7 +190,7 @@ function Prog(){const now=nowSession();return Hero()+`
   <div class="rule-h">Programme</div>
   <div class="prog">${SESSIONS.map(s=>`<button class="row ${now&&now.id===s.id?"live":""}" data-sess="${s.id}">
     ${s.n?`<span class="num">${s.n}</span>`:`<span class="num dim">${fmt(s.time)}</span>`}
-    <span style="flex:1"><span class="sess-title" ${s.n?"":'style="color:#fff"'}>${esc(s.title)}</span>${s.sub?`<span class="sess-sub small">${esc(s.sub)}</span>`:""}${s.by?`<span class="sess-by">${esc(s.by)}</span>`:""}
+    <span style="flex:1"><span class="sess-title" ${s.n||s.id==="panel"||s.id==="award"?"":'style="color:#fff"'}>${esc(s.title)}</span>${s.sub?`<span class="sess-sub small">${esc(s.sub)}</span>`:""}${s.by?`<span class="sess-by">${esc(s.by)}</span>`:""}
     ${s.n?`<span class="sess-time">${fmt(s.time)} to ${fmt(s.end)} PM${S.ratings[s.id]?' <span class="pill ok">Rated</span>':""}</span>`:""}</span></button>`).join("")}</div>
   <p class="small muted" style="margin-top:14px;font-style:italic;text-align:center">${EVENT.cpe}</p>
   <div class="rule-h">Meet Our Speakers</div>
@@ -304,7 +304,6 @@ const FB_SCALES=[["satisfaction","How satisfied are you with the overall confere
 const FB_STARS=[["food","Food"],["venue","Venue"],["panel","Panel Discussion"],["posters","Posters"],["booths","Booths"],["flow","Programme Flow and Duration"]];
 const FB_TEXT=[["valuable","Which session(s) were the most valuable to you?"],["future","What topics would you like to see for future AudConnect?"],["other","Any other feedback for the organising committee?"]];
 function FBForm(){const F=S.fbf;return `<p class="small muted" style="margin:0 0 4px">All questions are required. Talks are rated separately below.</p>
-  <label class="lbl" for="fe">Email</label><input id="fe" class="field" type="email" inputmode="email" autocomplete="email" maxlength="160" placeholder="name@example.com" value="${esc(F.email||"")}">
   ${FB_SCALES.map(([k,q,lo,hi])=>`<label class="lbl">${q}</label><div class="scale5">${[1,2,3,4,5].map(n=>`<button data-fbs="${k}:${n}" aria-pressed="${F[k]===n}">${n}</button>`).join("")}</div><div class="small muted" style="display:flex;justify-content:space-between;margin-top:4px"><span>${lo}</span><span>${hi}</span></div>`).join("")}
   <label class="lbl">Rate each part of the event</label><div class="fbstars">${FB_STARS.map(([k,l])=>`<div class="fbst"><span>${l}</span><span class="stars sm">${[1,2,3,4,5].map(n=>`<button class="star ${(F[k]||0)>=n?"on":""}" data-fbs="${k}:${n}" aria-label="${l} ${n} star${n>1?"s":""}">${I.star}</button>`).join("")}</span></div>`).join("")}</div>
   ${FB_TEXT.map(([k,q])=>`<label class="lbl" for="ft_${k}">${q}</label><textarea id="ft_${k}" class="field" rows="2" maxlength="1000">${esc(F[k]||"")}</textarea>`).join("")}`}
@@ -315,7 +314,7 @@ function FB(){const done=rateable().filter(s=>S.ratings[s.id]).length;const W=S.
   <div class="redbox" style="margin-top:16px;text-align:center"><div style="font-size:34px">🔒</div><p style="font-weight:800;margin:6px 0 4px">Not open yet</p><p class="small muted" style="margin:0">The SAPS team will open the CE quiz and event feedback shortly. Pass the quiz (80% or more) and submit your feedback to receive your Certificate of Participation.</p></div>${rate}`;
   const ce=S.ce;
   return `<h1 class="page-title">CE &amp; Feedback</h1><p class="tag">Earn your certificate</p>
-  <p class="muted" style="margin-top:12px">Two steps: pass the CE quiz with 80% or more, then submit your event feedback.</p>
+  <div class="redbox" style="margin-top:14px"><b style="display:block;margin-bottom:4px">To obtain your 4 CPE points</b><span class="small">Everyone needs to complete both steps: pass the CE quiz (80% or more) and complete the event feedback form. Your Certificate of Participation unlocks once both are done.</span></div>
   <div class="rule-h">Step 1: CE Quiz</div><div class="box">
    ${ce.passed?`<span class="pill ok">Passed</span><p style="margin:10px 0 0">Best score ${ce.best}/${ce.total}. Well done!</p>`:ce.attempts?`<span class="pill">Not yet passed</span><p style="margin:10px 0 12px">Best score so far ${ce.best}/${ce.total}. You need 80% to pass. Retakes are allowed.</p><button class="btn" data-a="cestart">RETAKE THE QUIZ</button>`:`<p style="margin:0 0 12px">Multiple choice questions on today's talks. You'll see the right answers at the end.</p><button class="btn" data-a="cestart">START THE CE QUIZ</button>`}
   </div>
@@ -342,11 +341,15 @@ function Me(){const m=S.me;return `<h1 class="page-title">My Badge</h1><div styl
   <div class="badge"><div class="band"><img class="logo-img" src="${IMG.logo}" alt="">AUDCONNECT 2026</div><div class="body">
   <div class="nm">${esc(m.fn)}<br>${esc(m.ln)}</div><p class="muted" style="margin-top:8px">${esc(m.co)}</p>
   <p style="margin-top:12px"><span class="pill">${m.member==="yes"?"SAPS Member":"Guest"}</span> ${S.committee?'<span class="pill">Organiser</span> ':""}<span class="pill ok">Checked in</span></p></div></div>
+  <div class="rule-h">About SAPS</div>
+  <div class="about"><div class="ab"><span class="ab-t">Vision</span><p>${esc(SOCIETY.vision)}</p></div>
+  <div class="ab"><span class="ab-t">Mission</span><p>${esc(SOCIETY.mission)}</p></div>
+  <div class="ab"><span class="ab-t">Core Values</span><div class="vals">${SOCIETY.values.map(v=>`<span>${esc(v)}</span>`).join("")}</div></div></div>
+  <div style="height:10px"></div><button class="btn ghost" data-a="welcome">WELCOME, VISION &amp; COMMITTEE</button>
   <div class="rule-h">Certificate</div>
-  ${S.feedback&&S.ce.passed?`<button class="btn" data-a="cert">VIEW CERTIFICATE</button>`:`<div class="box"><p class="small">Unlocks when you pass the CE quiz (80% or more) and submit the event feedback, both in the CE tab.</p><button class="btn ghost" data-tab="fb">GO TO CE &amp; FEEDBACK</button></div>`}
-  <div class="rule-h">About SAPS</div><button class="btn ghost" data-a="welcome">WELCOME, VISION &amp; COMMITTEE</button>
-  <div class="rule-h">Organisers</div>${S.committee?`<button class="btn" data-a="admin">OPEN ORGANISER DASHBOARD</button>`:`<button class="btn" data-a="orgcode">ORGANISER ONLY</button><p class="small muted" style="margin-top:8px">For the SAPS committee. You'll need the organiser code.</p>`}
-  <div style="height:18px"></div><button class="btn ghost" data-a="signout">NOT YOU? CHECK IN AS SOMEONE ELSE</button>`}
+  ${S.feedback&&S.ce.passed?`<button class="btn" data-a="cert">VIEW CERTIFICATE</button>`:`<div class="box"><p class="small">To obtain your CPE points and certificate, pass the CE quiz (80% or more) and complete the event feedback form, both in the CE tab.</p><button class="btn ghost" data-tab="fb">GO TO CE &amp; FEEDBACK</button></div>`}
+  <div style="height:22px"></div><button class="btn ghost" data-a="logoutask">LOG OUT</button>
+  <div class="org-mini">${S.committee?`<button class="linkbtn" data-a="admin">Open organiser dashboard</button>`:`<button class="linkbtn" data-a="orgcode">Organiser only</button>`}<span>For the SAPS committee</span></div>`}
 
 const CARDS=["welcome","vmv","committee"];
 function WelcomeSlide(k){
@@ -536,6 +539,7 @@ document.addEventListener("click",async e=>{
     case "showform":S.showForm=true;render();scrollTo(0,0);rpc("company_suggestions",{}).then(c=>{S.cos=c||[];const dl=$("#cos");if(dl)dl.innerHTML=S.cos.map(v=>`<option value="${esc(v)}">`).join("")}).catch(()=>{});setTimeout(()=>{const f=$("#fn");f&&f.focus()},50);break;
     case "hideform":keepReg();S.showForm=false;render();break;
     case "close":close();break;
+    case "logoutask":sheet(`<h2 style="margin:6px 0 8px;font-size:20px;font-weight:900">Log out?</h2><p class="muted">You can come back any time. Check in again with the same first name, last name and company and your profile, quiz and feedback will be restored.</p><div style="height:14px"></div><button class="btn" data-a="signout">LOG OUT</button><div style="height:8px"></div><button class="btn ghost" data-a="close">STAY CHECKED IN</button>`);break;
     case "signout":try{localStorage.removeItem("ac26_token")}catch(x){}location.reload();break;
     case "ask":{const t=$("#qt").value.trim();if(t.length<5){toast("Type your question first");return}b.disabled=true;
       try{const id=await rpc("ask_question",{p_token:S.token,p_session:S.qaSession,p_body:t,p_anonymous:$("#anon").checked});S.myVotes.add(id);S.myQs.add(id);S.qaSort="new";toast("Question sent")}catch(x){toast(errMsg(x))}
@@ -545,8 +549,7 @@ document.addEventListener("click",async e=>{
     case "next":{const t=S.trivia;if(t.i+1<TRIVIA.length){t.i++;t.picked=null;render()}else{try{await rpc("submit_trivia",{p_token:S.token,p_score:t.score});S.myTrivia=t.score}catch(x){toast(errMsg(x))}await loadPublic().catch(()=>{});render()}break}
     case "saverate":{const dr=S._draft||{id:d.sid,stars:(S.ratings[d.sid]||{}).stars};if(!dr.stars)return;const c=$("#rc").value.trim();b.disabled=true;
       try{await rpc("rate_session",{p_token:S.token,p_session:dr.id,p_stars:dr.stars,p_comment:c});S.ratings[dr.id]={stars:dr.stars,comment:c};S._draft=null;close();render();toast("Rating saved")}catch(x){b.disabled=false;toast(errMsg(x))}break}
-    case "overall":{const F=S.fbf;F.email=$("#fe").value.trim();FB_TEXT.forEach(([k])=>F[k]=$("#ft_"+k).value.trim());
-      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(F.email)){toast("Please enter a valid email");$("#fe").focus();return}
+    case "overall":{const F=S.fbf;FB_TEXT.forEach(([k])=>F[k]=$("#ft_"+k).value.trim());
       const miss=[...FB_SCALES.map(x=>x[0]),...FB_STARS.map(x=>x[0])].find(k=>!F[k]);if(miss){toast("Please answer every rating question");return}
       const missT=FB_TEXT.find(([k])=>!F[k]);if(missT){toast("Please answer: "+missT[1]);$("#ft_"+missT[0]).focus();return}
       b.disabled=true;try{await rpc("submit_feedback_v2",{p_token:S.token,p:F});S.feedback={...F};render();toast(S.ce.passed?"Thank you! Certificate unlocked":"Thank you for your feedback")}catch(x){b.disabled=false;toast(errMsg(x))}break}
@@ -583,7 +586,7 @@ document.addEventListener("click",async e=>{
     case "togpoll":await adminAct("admin_set_stage",{p_view:null,p_pinned:null,p_poll_open:!S.stage.poll_open,p_cloud_open:null});break;
     case "togcloud":await adminAct("admin_set_stage",{p_view:null,p_pinned:null,p_poll_open:null,p_cloud_open:!S.stage.cloud_open});break;
     case "exportxlsx":{try{await loadAdmin()}catch(x){}const t=d=>d?new Date(d).toLocaleString("en-SG",{timeZone:"Asia/Singapore",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}):"";
-      const rows=(S.adx||[]).map(x=>({"First Name":x.first_name,"Last Name":x.last_name,"Company":x.company,"SAPS Member":x.saps_member?"Yes":x.saps_member===false?"No":"","Committee":x.is_committee?"Yes":"","Check In Time (SGT)":t(x.checked_in_at),"Feedback Submitted (SGT)":t(x.feedback_first_at),"Feedback Last Updated (SGT)":t(x.feedback_last_at),"Email":x.email||"","Overall Satisfaction (1-5)":x.satisfaction??"","Met Expectations (1-5)":x.expectations??"","Food":x.food??"","Venue":x.venue??"","Panel Discussion":x.panel??"","Posters":x.posters??"","Booths":x.booths??"","Programme Flow and Duration":x.flow??"","Most Valuable Sessions":x.valuable||"","Future Topics":x.future_topics||"","Other Feedback":x.other_feedback||"","CE Attempts":x.ce_attempts||0,"CE Best Score":x.ce_best_score!=null?`${x.ce_best_score}/${x.ce_total}`:"","CE Passed":x.ce_passed?"Yes":"No","CE Passed Time (SGT)":t(x.ce_passed_at),"CE Last Attempt (SGT)":t(x.ce_last_at),"Certificate Eligible":x.certificate_eligible?"Yes":"No"}));
+      const rows=(S.adx||[]).map(x=>({"First Name":x.first_name,"Last Name":x.last_name,"Company":x.company,"SAPS Member":x.saps_member?"Yes":x.saps_member===false?"No":"","Committee":x.is_committee?"Yes":"","Check In Time (SGT)":t(x.checked_in_at),"Feedback Submitted (SGT)":t(x.feedback_first_at),"Feedback Last Updated (SGT)":t(x.feedback_last_at),"Overall Satisfaction (1-5)":x.satisfaction??"","Met Expectations (1-5)":x.expectations??"","Food":x.food??"","Venue":x.venue??"","Panel Discussion":x.panel??"","Posters":x.posters??"","Booths":x.booths??"","Programme Flow and Duration":x.flow??"","Most Valuable Sessions":x.valuable||"","Future Topics":x.future_topics||"","Other Feedback":x.other_feedback||"","CE Attempts":x.ce_attempts||0,"CE Best Score":x.ce_best_score!=null?`${x.ce_best_score}/${x.ce_total}`:"","CE Passed":x.ce_passed?"Yes":"No","CE Passed Time (SGT)":t(x.ce_passed_at),"CE Last Attempt (SGT)":t(x.ce_last_at),"Certificate Eligible":x.certificate_eligible?"Yes":"No"}));
       if(window.XLSX){const ws=XLSX.utils.json_to_sheet(rows);ws["!cols"]=Object.keys(rows[0]||{a:1}).map(k=>({wch:Math.max(12,k.length+2)}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"AudConnect 2026");XLSX.writeFile(wb,"AudConnect2026_attendance_CE_feedback.xlsx")}
       else{const keys=Object.keys(rows[0]||{});downloadCSV("AudConnect2026_attendance_CE_feedback.csv",[keys,...rows.map(r=>keys.map(k=>r[k]))])}
       break}
