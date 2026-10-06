@@ -3,7 +3,8 @@
 const EVENT={kicker:"AUDCONNECT 2026",theme:"Driving Efficiency, Enhancing Care",date:"10 October 2026",time:"12:30 to 6:00 PM",lunch:"Lunch from 12:30 to 2:00 PM",room:"Level 3, Room 300-302",venue:"Suntec Singapore",cpe:"Participation in this event is recognised with 4 CPE points under Pillar 1 of the SAPS CPE program.",host:"Society for Audiology Professionals Singapore"};
 const SPEAKERS={
   sg:{name:"Dr. Sharad Govil",role:"President",org:"SAPS",bio:[]},
-  su:{name:"Su Junqiang",role:"Vice-President",org:"SAPS",bio:[]},
+  ss:{name:"Sadrina Shah",role:"Host & Assistant Treasurer",org:"SAPS",host:true,bio:[]},
+  su:{name:"Su Junqiang",role:"Host & Vice-President",org:"SAPS",host:true,bio:[]},
   jo:{name:"Jessica Ong",role:"Clinical Specialist",org:"Cochlear",bio:["Jessica holds a Master of Audiology and a Bachelor of Biomedical Science from the University of Auckland. With clinical experience across New Zealand and Singapore, she has extensive experience supporting patients with complex hearing loss and hearing implants. In her role with Cochlear, Jessica partners with clinicians and healthcare teams across the country to support cochlear implant services, foster strong clinical partnerships, and improve access to implantable hearing solutions and outcomes for people with significant hearing loss."]},
   rt:{name:"Renato Tan",role:"Business Development Manager",org:"Cochlear",bio:["Renato Tan completed his Master in Clinical Audiology at the University of Santo Tomas, Manila, in 2007. He moved to Singapore in 2010 to join Cochlear, helping Southeast Asian countries raise awareness of hearing implants and build local expertise. From 2017 he led Cochlear's Singapore team, working closely with hearing professionals and recipients. Since 2021 he has held a regional role for Cochlear's Acoustics portfolio, championing bone conduction solutions and meeting Baha recipients across seven countries. He will share how bone conduction technology has evolved to change many lives for the better."]},
   rh:{name:"Dr. Rebecca Heywood",role:"Senior Consultant ENT Surgeon",org:"The ENT Clinic",bio:["Dr Rebecca Heywood is a UK-trained ENT specialist and fellowship-trained Ear and Hearing Surgeon based at The ENT Clinic in Singapore. With over 25 years of experience across the UK, Australia and Singapore, she cares for adults and children with a wide range of ear and hearing problems, with particular expertise in hearing restoration and implantable hearing technologies.","She has established and led cochlear implant services, contributed to hearing research and implant development, and participated in World Health Organization ear and hearing care initiatives. Rebecca is also an active researcher and educator, passionate about improving hearing health and helping people stay connected throughout life."]},
@@ -16,11 +17,11 @@ const SPEAKERS={
   fm:{name:"Fu Manjia",role:"Senior Audiologist",org:"Ng Teng Fong General Hospital",bio:[]},
   lz:{name:"Lee Zu Xuan",role:"Senior Audiologist",org:"Amazing Hearing Group",bio:["Lee Zu Xuan is an experienced audiologist with a strong academic foundation and a diverse professional background. He holds a Bachelor's degree in Biomedical Engineering and a Master's degree in Audiology from the National University of Singapore (NUS). Zu Xuan has developed a well-rounded career in audiology, with previous roles as a Product Audiologist at GN Group and at Cochlear Limited. He currently serves as Senior Audiologist at Amazing Hearing Group, where he continues to apply his clinical and technical expertise to deliver high-quality patient care."]},
 };
-const SPK_ORDER=["sg","su","jo","rt","rh","ct","tt","ls","fm","at","al","th","lz"];
+const SPK_ORDER=["ss","su","sg","rh","ct","jo","tt","ls","fm","at","al","th","lz","rt"];
 const POSTERS=[
   {id:"p1",title:"Reducing the Lead Time for Hearing Aid Appointments in Changi General Hospital",team:"Steven Lee Lock Hey, Hazel Yeo Kai Hui, Deng Jing, Lim Wei Ting, Tee Yi Siang, Wendy Teo Bing Yu, Justina Tan Yu Han, Rijwanna Parveen, Firza Achmed Anguilla, Sabrina Tan Chin Lynn, Katrina Balcos De Luna & Jocelyn Ng Hwee Ling",org:"Changi General Hospital",key:"Median wait for a hearing aid evaluation fell from 18 weeks to 8 weeks, and stayed there after the project ended.",img:"poster1.jpg",thumb:"poster1-thumb.jpg"},
   {id:"p2",title:"Introduction of Hearing Aid Service Drive Through (HAS-DT)",team:"Soo Ying Pei, Wong Geng Hui, Pang Wan Ngo & Winnie Ling Hoe Hui",org:"Alexandra Hospital, Allied Health Audiology",key:"Patients drop off faulty hearing aids without an appointment, freeing 56 appointment slots and saving 14 hours of staff time.",img:"poster2.jpg",thumb:"poster2-thumb.jpg"},
-  {id:"p3",title:"Integration of Otoscopy into the Nursing Triage Station at the ENT Centre",team:"Soo Ying Pei, Wong Geng Hui, Pang Wan Ngo, Naw Hla Hla Chit, Ong Susan, Nan Thet Thet Mon, Joey Kan Foong Yee, Mabelle Cheah Xin Yean & Arhaya Binte Ali",org:"Alexandra Hospital, Audiology & ENT Nursing",award:"Winner, Alexandra Hospital 2026 Quality Improvement Award",key:"Nurses trained by audiologists now check ears at triage, cutting the wait for ear clearance from 28 minutes to under a minute.",img:"poster3.jpg",thumb:"poster3-thumb.jpg"},
+  {id:"p3",title:"Integration of Otoscopy into the Nursing Triage Station at the ENT Centre",team:"Soo Ying Pei, Wong Geng Hui, Pang Wan Ngo, Naw Hla Hla Chit, Ong Susan, Nan Thet Thet Mon, Joey Kan Foong Yee, Mabelle Cheah Xin Yean & Arhaya Binte Ali",org:"Alexandra Hospital, Audiology & ENT Nursing",key:"Nurses trained by audiologists now check ears at triage, cutting the wait for ear clearance from 28 minutes to under a minute.",img:"poster3.jpg",thumb:"poster3-thumb.jpg"},
 ];
 const SPONSORS=[["Platinum",["cochlear"]],["Gold",["oticon","phonak","signia","starkey","widex"]],["Silver",["resound"]]];
 const SPONSOR_NAMES={cochlear:"Cochlear",oticon:"Oticon",phonak:"Phonak",signia:"Signia",starkey:"Starkey",widex:"Widex",resound:"ReSound"};
@@ -56,7 +57,7 @@ const CLOUD_Q="One word for audiology in 2030";
 const EVENT_DATE="2026-10-10";
 
 let S={
-  token:null,me:null,committee:false,reg:{member:null},tab:"prog",qaSession:"t1",qaSort:"top",playSeg:"qa",adQaSes:"all",
+  token:null,me:null,committee:false,reg:{member:null},tab:"prog",qaSession:"t1",qaSort:"top",playSeg:"qa",adQaSes:"all",fbf:{},
   q:[],myVotes:new Set(),myQs:new Set(),pollCounts:POLL.o.map(()=>0),myPoll:null,words:[],myWord:null,
   board:[],myTrivia:null,trivia:{i:0,picked:null,score:0},photos:[],likes:{},myLikes:new Set(),ce:{attempts:0,best:null,total:null,passed:false},cardsSeen:[],comments:{},postLikes:{},openCm:{},win:{open:false},quiz:null,welcome:null,
   stage:{view:"photos",pinned_question:null,poll_open:true,cloud_open:true},ratings:{},feedback:null,nps:null,
@@ -195,14 +196,16 @@ function Prog(){const now=nowSession();return Hero()+`
   <div class="rule-h">Meet Our Speakers</div>
   <div class="spk-grid">${SPK_ORDER.map(k=>`<button class="spk" data-spk="${k}">${photo(k)}<span class="n">${esc(SPEAKERS[k].name)}</span><span class="r">${esc(SPEAKERS[k].role)},<br>${esc(SPEAKERS[k].org)}</span></button>`).join("")}</div>
   <div class="rule-h">Poster Presentations</div>
-  <div class="pst-list">${POSTERS.map(p=>`<button class="pst" data-poster="${p.id}"><img src="${p.thumb}" alt="" loading="lazy"><span class="pst-b">${p.award?`<span class="pill pst-aw">🏆 Award winner</span>`:""}<b>${esc(p.title)}</b><span class="small muted">${esc(p.org)}</span><span class="pst-k">${esc(p.key)}</span><span class="pst-more">View poster ›</span></span></button>`).join("")}</div>`}
-function Poster(id){const p=POSTERS.find(x=>x.id===id);return `${p.award?`<span class="pill pst-aw">🏆 ${esc(p.award)}</span>`:""}
-  <h2 style="margin:8px 0 6px;font-size:19px;font-weight:900;color:#fff;line-height:1.25">${esc(p.title)}</h2>
+  <p class="small muted" style="margin:-4px 0 12px">Give a thumbs up to the posters you enjoyed.</p>
+  <div class="pst-list">${POSTERS.map(p=>`<div class="pst"><button class="pst-open" data-poster="${p.id}"><img src="${p.thumb}" alt="" loading="lazy"><span class="pst-b"><b>${esc(p.title)}</b><span class="small muted">${esc(p.org)}</span><span class="pst-k">${esc(p.key)}</span><span class="pst-more">View poster ›</span></span></button>${pstLike(p.id)}</div>`).join("")}</div>
+  ${Sponsors()}`}
+function pstLike(id){const c="poster-"+id;const on=S.cardsSeen.includes(c);const n=(S.postLikes||{})[c]||0;return `<button class="pst-like ${on?"on":""}" data-plike="${id}" aria-pressed="${on}" aria-label="Thumbs up this poster">👍 <b>${n}</b></button>`}
+function Poster(id){const p=POSTERS.find(x=>x.id===id);return `<h2 style="margin:8px 0 6px;font-size:19px;font-weight:900;color:#fff;line-height:1.25">${esc(p.title)}</h2>
   <p class="small" style="margin:0 0 4px;color:var(--red-t);font-weight:700">${esc(p.org)}</p><p class="small muted" style="margin:0 0 12px">${esc(p.team)}</p>
   <a href="${p.img}" target="_blank" rel="noopener" class="pst-full"><img src="${p.img}" alt="Poster: ${esc(p.title)}"></a>
-  <p class="small muted" style="text-align:center;margin:8px 0 12px">Tap the poster to open it full size and zoom in.</p>
+  <p class="small muted" style="text-align:center;margin:8px 0 12px">Tap the poster to open it full size and zoom in.</p><div style="display:flex;justify-content:center;margin-bottom:12px" id="pstLikeSheet">${pstLike(p.id)}</div>
   <button class="btn ghost" data-a="close">CLOSE</button>`}
-function Sponsors(){return `<section class="spn" aria-label="Our sponsors"><p class="spn-t">Thank you to our sponsors</p>${SPONSORS.map(([t,ks])=>`<div class="spn-tier"><span class="spn-l ${t.toLowerCase()}">${t}</span><div class="spn-row ${t.toLowerCase()}">${ks.map(k=>`<img src="${IMG["sp_"+k]}" alt="${SPONSOR_NAMES[k]}">`).join("")}</div></div>`).join("")}</section>`}
+function Sponsors(){return `<section class="spn" aria-label="Our sponsors"><p class="spn-t">Thank you to our sponsors</p>${SPONSORS.map(([t,ks])=>`<div class="spn-tier"><span class="spn-l ${t.toLowerCase()}">${t}</span><div class="spn-row ${t.toLowerCase()}" style="--n:${ks.length}">${ks.map(k=>`<span class="spn-c"><img src="${IMG["sp_"+k]}" alt="${SPONSOR_NAMES[k]}"></span>`).join("")}</div></div>`).join("")}</section>`}
 
 function Sess(id){const s=SESSIONS.find(x=>x.id===id);return `<span class="sess-time" style="margin:0">${fmt(s.time)} to ${fmt(s.end)} PM</span>
   <h2 style="margin:6px 0 4px;font-size:21px;text-transform:uppercase;font-weight:900;color:var(--red-t)">${esc(s.title)}</h2>
@@ -220,7 +223,7 @@ function About(){return `<div class="rule-h">About the Society</div>
 function Spk(k){const v=SPEAKERS[k];const ss=SESSIONS.filter(s=>(s.spk||[]).includes(k));return `<div style="text-align:center">${photo(k,110)}
   <h2 style="margin:16px 0 2px;font-size:22px;text-transform:uppercase;font-weight:900">${esc(v.name)}</h2><p class="muted">${esc([v.role,v.org].filter(Boolean).join(", "))}</p></div>
   ${(v.bio||[]).map(p=>`<p class="bio">${esc(p)}</p>`).join("")}
-  <div class="rule-h" style="margin-top:18px">Speaking At</div>${ss.map(s=>`<p><span class="sess-title">${esc(s.title)}</span><span class="small muted">${fmt(s.time)} to ${fmt(s.end)} PM</span></p>`).join("")}
+  ${v.host?`<div class="rule-h" style="margin-top:18px">Your Host</div><p class="small muted">Hosting AudConnect 2026 on 10 October.</p>`:""}${ss.length?`<div class="rule-h" style="margin-top:18px">Speaking At</div>`:""}${ss.map(s=>`<p><span class="sess-title">${esc(s.title)}</span><span class="small muted">${fmt(s.time)} to ${fmt(s.end)} PM</span></p>`).join("")}
   <button class="btn ghost" data-a="close">CLOSE</button>`}
 /* Certificate of Participation: SAPS template (cert-bg.webp) with the attendee's name set in Century Gothic style */
 const CERT={w:1655,h:2338,cx:.4997,cy:.5440,maxW:.80,size:.0385};
@@ -297,6 +300,14 @@ function Rate(id){const s=SESSIONS.find(x=>x.id===id);const r=S.ratings[id]||{};
   <div style="height:12px"></div><button class="btn" data-a="saverate" data-sid="${id}" id="rsave" ${r.stars?"":"disabled"}>SAVE RATING</button>`}
 
 const fmtSG=d=>new Date(d).toLocaleString("en-SG",{timeZone:"Asia/Singapore",day:"numeric",month:"short",hour:"numeric",minute:"2-digit"});
+const FB_SCALES=[["satisfaction","How satisfied are you with the overall conference?","Very dissatisfied","Extremely satisfied"],["expectations","How well did the conference meet your expectations?","Did not meet","Exceeded the expectations"]];
+const FB_STARS=[["food","Food"],["venue","Venue"],["panel","Panel Discussion"],["posters","Posters"],["booths","Booths"],["flow","Programme Flow and Duration"]];
+const FB_TEXT=[["valuable","Which session(s) were the most valuable to you?"],["future","What topics would you like to see for future AudConnect?"],["other","Any other feedback for the organising committee?"]];
+function FBForm(){const F=S.fbf;return `<p class="small muted" style="margin:0 0 4px">All questions are required. Talks are rated separately below.</p>
+  <label class="lbl" for="fe">Email</label><input id="fe" class="field" type="email" inputmode="email" autocomplete="email" maxlength="160" placeholder="name@example.com" value="${esc(F.email||"")}">
+  ${FB_SCALES.map(([k,q,lo,hi])=>`<label class="lbl">${q}</label><div class="scale5">${[1,2,3,4,5].map(n=>`<button data-fbs="${k}:${n}" aria-pressed="${F[k]===n}">${n}</button>`).join("")}</div><div class="small muted" style="display:flex;justify-content:space-between;margin-top:4px"><span>${lo}</span><span>${hi}</span></div>`).join("")}
+  <label class="lbl">Rate each part of the event</label><div class="fbstars">${FB_STARS.map(([k,l])=>`<div class="fbst"><span>${l}</span><span class="stars sm">${[1,2,3,4,5].map(n=>`<button class="star ${(F[k]||0)>=n?"on":""}" data-fbs="${k}:${n}" aria-label="${l} ${n} star${n>1?"s":""}">${I.star}</button>`).join("")}</span></div>`).join("")}</div>
+  ${FB_TEXT.map(([k,q])=>`<label class="lbl" for="ft_${k}">${q}</label><textarea id="ft_${k}" class="field" rows="2" maxlength="1000">${esc(F[k]||"")}</textarea>`).join("")}`}
 function FB(){const done=rateable().filter(s=>S.ratings[s.id]).length;const W=S.win||{};
   const rate=`<div class="rule-h">Rate the Talks</div><div class="list">${rateable().map(s=>`<button class="item" data-rate="${s.id}"><span class="num" style="font-size:20px;min-width:30px">${s.n||"P"}</span><span style="flex:1;font-weight:700;font-size:14px">${esc(s.title)}</span>${S.ratings[s.id]?`<span class="pill ok">${S.ratings[s.id].stars} ★</span>`:'<span class="pill">Rate</span>'}</button>`).join("")}</div>
   <p class="small muted" style="margin-top:8px">${done} of ${rateable().length} rated. You can rate talks at any time.</p>`;
@@ -310,12 +321,7 @@ function FB(){const done=rateable().filter(s=>S.ratings[s.id]).length;const W=S.
   </div>
   <div class="rule-h">Step 2: Event Feedback</div>
   ${S.feedback?`<div class="box"><span class="pill ok">Thank you</span><p style="margin-top:10px">Your feedback is in.</p></div>`:
-  `<div class="box"><label class="lbl" style="margin-top:0">How likely are you to recommend AudConnect to a colleague?</label>
-  <div class="nps">${[...Array(11).keys()].map(n=>`<button data-nps="${n}" aria-pressed="${S.nps===n}">${n}</button>`).join("")}</div>
-  <div class="small muted" style="display:flex;justify-content:space-between;margin-top:4px"><span>Not likely</span><span>Very likely</span></div>
-  <label class="lbl" for="f1">What topic should we cover next year?</label><input id="f1" class="field" maxlength="300">
-  <label class="lbl" for="f2">Anything we should do differently?</label><textarea id="f2" class="field" rows="3" maxlength="1000"></textarea>
-  <div style="height:14px"></div><button class="btn" data-a="overall">SUBMIT FEEDBACK</button></div>`}
+  `<div class="box fbf">${FBForm()}<div style="height:14px"></div><button class="btn" data-a="overall">SUBMIT FEEDBACK</button></div>`}
   ${ce.passed&&S.feedback?`<div style="height:16px"></div><button class="btn" data-a="cert">VIEW MY CERTIFICATE</button>`:""}
   ${rate}`}
 function CEQuiz(){const Q=S.quiz;if(!Q||!Q.qs)return `<p class="muted">Loading the quiz...</p>`;
@@ -415,13 +421,18 @@ function AdEng(){const t=S.pollCounts.reduce((a,b)=>a+b,0);
   <div class="acts">${S.ad.words.map(w=>`<button class="act" style="${w.hidden?"opacity:.4;text-decoration:line-through":""}" data-hideword="${w.id}" data-v="${!w.hidden}">${esc(w.word)} ${w.hidden?"↺":"✕"}</button>`).join("")||'<span class="muted small">No words yet</span>'}</div>
   <div class="acts" style="margin-top:12px"><button class="act ${S.stage.cloud_open?"on":""}" data-a="togcloud">${S.stage.cloud_open?"Accepting words":"Closed"}</button><button class="act" data-adstage="cloud">Show on screen</button></div></div>
   <div class="rule-h">CE Quiz</div><div class="box">${(()=>{const X=S.adx||[];const tried=X.filter(x=>x.ce_attempts>0).length,pass=X.filter(x=>x.ce_passed).length,cert=X.filter(x=>x.certificate_eligible).length;return `<p style="margin:0">${tried} attempted, <b>${pass} passed</b>, <b>${cert}</b> eligible for a certificate.</p><p class="small muted" style="margin:8px 0 0">Open to attendees now, with no time lock.</p>`})()}</div>`}
-function AdFB(){const sc=S.ad.feedback.map(f=>f.nps);const pro=sc.filter(x=>x>=9).length,det=sc.filter(x=>x<=6).length;const nps=sc.length?Math.round((pro-det)/sc.length*100):null;
+function AdFB(){const FBk=S.ad.feedback;const avg=k=>{const v=FBk.map(f=>f[k]).filter(x=>x!=null);return v.length?(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1):"–"};
   const R={};S.ad.ratings.forEach(r=>{(R[r.session_id]=R[r.session_id]||[]).push(r)});
-  const comments=[...S.ad.feedback.flatMap(f=>[f.improve,f.next_topic?"Next year: "+f.next_topic:null]),...S.ad.ratings.map(r=>r.comment?(SESSIONS.find(s=>s.id===r.session_id)||{}).n?`Talk ${SESSIONS.find(s=>s.id===r.session_id).n}: ${r.comment}`:`Panel: ${r.comment}`:null)].filter(Boolean).slice(0,40);
-  return `<div class="kpis"><div class="kpi red"><div class="v">${nps==null?"–":(nps>0?"+":"")+nps}</div><div class="l">Net Promoter Score</div></div><div class="kpi"><div class="v">${sc.length}</div><div class="l">Event feedback forms</div></div></div>
-  <div class="rule-h">Session Ratings</div><div class="list">${rateable().map(s=>{const rs=R[s.id]||[];const avg=rs.length?rs.reduce((a,r)=>a+r.stars,0)/rs.length:0;
-    return `<div class="item"><span class="num" style="font-size:20px;min-width:30px">${s.n||"P"}</span><span style="flex:1"><b style="display:block;font-size:13px">${esc(s.title)}</b><span class="small muted">${rs.length?rs.length+" rating"+(rs.length>1?"s":""):"Not rated yet"}</span></span>${rs.length?`<b style="color:var(--gold)">${avg.toFixed(1)} ★</b>`:""}</div>`}).join("")}</div>
-  <div class="rule-h">Comments</div><div class="list">${comments.map(c=>`<div class="item small">${esc(c)}</div>`).join("")||'<div class="item small muted">No comments yet</div>'}</div>
+  const txt=k=>FBk.map(f=>f[k]).filter(Boolean);
+  const comments=S.ad.ratings.map(r=>r.comment?(SESSIONS.find(s=>s.id===r.session_id)||{}).n?`Talk ${SESSIONS.find(s=>s.id===r.session_id).n}: ${r.comment}`:`Panel: ${r.comment}`:null).filter(Boolean);
+  const box=(t,arr)=>`<div class="rule-h">${t}</div><div class="list">${arr.slice(0,60).map(c=>`<div class="item small">${esc(c)}</div>`).join("")||'<div class="item small muted">None yet</div>'}</div>`;
+  return `<div class="kpis"><div class="kpi red"><div class="v">${avg("satisfaction")}</div><div class="l">Overall satisfaction (of 5)</div></div><div class="kpi"><div class="v">${avg("expectations")}</div><div class="l">Met expectations (of 5)</div></div></div>
+  <div class="kpis" style="margin-top:10px"><div class="kpi"><div class="v">${FBk.length}</div><div class="l">Feedback forms</div></div><div class="kpi"><div class="v">${POSTERS.reduce((a,p)=>a+((S.postLikes||{})["poster-"+p.id]||0),0)}</div><div class="l">Poster thumbs up</div></div></div>
+  <div class="rule-h">Event Ratings</div><div class="list">${FB_STARS.map(([k,l])=>`<div class="item"><span style="flex:1;font-weight:700;font-size:14px">${l}</span><b style="color:var(--gold)">${avg(k)} ★</b></div>`).join("")}</div>
+  <div class="rule-h">Posters</div><div class="list">${POSTERS.map(p=>`<div class="item"><span style="flex:1"><b style="display:block;font-size:13px">${esc(p.title)}</b><span class="small muted">${esc(p.org)}</span></span><b>👍 ${(S.postLikes||{})["poster-"+p.id]||0}</b></div>`).join("")}</div>
+  <div class="rule-h">Session Ratings</div><div class="list">${rateable().map(s=>{const rs=R[s.id]||[];const a=rs.length?rs.reduce((x,r)=>x+r.stars,0)/rs.length:0;
+    return `<div class="item"><span class="num" style="font-size:20px;min-width:30px">${s.n||"P"}</span><span style="flex:1"><b style="display:block;font-size:13px">${esc(s.title)}</b><span class="small muted">${rs.length?rs.length+" rating"+(rs.length>1?"s":""):"Not rated yet"}</span></span>${rs.length?`<b style="color:var(--gold)">${a.toFixed(1)} ★</b>`:""}</div>`}).join("")}</div>
+  ${box("Most Valuable Sessions",txt("valuable"))}${box("Future Topics",txt("next_topic"))}${box("Other Feedback",txt("other"))}${box("Talk Comments",comments)}
   <div style="height:14px"></div><button class="btn ghost" data-a="exportfb">EXPORT FEEDBACK (CSV)</button>`}
 function AdAtt(){const q=S.attQ.toLowerCase();const list=S.ad.attendees.filter(a=>!q||(a.first_name+" "+a.last_name+" "+a.company).toLowerCase().includes(q));
   const tm=d=>new Date(d).toLocaleTimeString("en-SG",{timeZone:"Asia/Singapore",hour:"numeric",minute:"2-digit"});
@@ -460,7 +471,7 @@ function render(){
   if(!S.me){$("#root").innerHTML=`<div class="app" style="padding-bottom:0">${Register()}</div>`;return}
   if(S.tab==="qa"){S.tab="play";S.playSeg="qa"}if(S.playSeg==="photos"){S.playSeg="qa";S.tab="ag"}
   const tabs={prog:["Programme",Prog],play:["Engage",Engage],ag:["Audigram",Photos],fb:["CE",()=>S.quiz?`<h1 class="page-title">CE Quiz</h1><div style="height:12px"></div>`+CEQuiz():FB()],me:["Me",Me]};
-  $("#root").innerHTML=`<div class="app"><header class="top"><div class="logo-row"><img class="logo-img" src="${IMG.logo}" alt="SAPS"><div class="wordmark">AUDCONNECT 2026<b>NEXTGEN AUDIOLOGY</b></div></div><button class="hdr-btn" data-tab="me">${esc(S.me.fn)}</button></header><main>${tabs[S.tab][1]()}${Sponsors()}</main></div>
+  $("#root").innerHTML=`<div class="app"><header class="top"><div class="logo-row"><img class="logo-img" src="${IMG.logo}" alt="SAPS"><div class="wordmark">AUDCONNECT 2026<b>NEXTGEN AUDIOLOGY</b></div></div><button class="hdr-btn" data-tab="me">${esc(S.me.fn)}</button></header><main>${tabs[S.tab][1]()}</main></div>
   <nav class="tabs" aria-label="Main"><div class="in">${Object.entries(tabs).map(([k,[l]])=>`<button data-tab="${k}" ${S.tab===k?'aria-current="page"':""}>${I[k]}${l}</button>`).join("")}</div></nav>`;
   const qs=$("#qs");if(qs)qs.onchange=e=>{S.qaSession=e.target.value;render()};
 }
@@ -486,6 +497,9 @@ document.addEventListener("click",async e=>{
     try{saveBlob(await certPDF(x.first_name,x.last_name),certName(x.first_name,x.last_name))}catch(e){toast("Couldn't create the PDF")}b.disabled=false;b.textContent=t;return}
   if(d.wsgo!==undefined){const tr=$("#wsTrack");tr.scrollTo({left:(+d.wsgo)*tr.clientWidth,behavior:"smooth"});return}
   if(d.capmore){S.capOpen=true;Welcome();return}
+  if(d.plike){const c="poster-"+d.plike;const had=S.cardsSeen.includes(c);if(had)S.cardsSeen=S.cardsSeen.filter(x=>x!==c);else S.cardsSeen.push(c);
+    S.postLikes[c]=Math.max(0,((S.postLikes||{})[c]||0)+(had?-1:1));document.querySelectorAll(`[data-plike="${d.plike}"]`).forEach(x=>x.outerHTML=pstLike(d.plike));
+    rpc("toggle_post_like",{p_token:S.token,p_card:c}).catch(x=>toast(errMsg(x)));return}
   if(d.wlike){const had=S.cardsSeen.includes("welcome-post");if(had)S.cardsSeen=S.cardsSeen.filter(x=>x!=="welcome-post");else S.cardsSeen.push("welcome-post");
     S.postLikes["welcome-post"]=((S.postLikes||{})["welcome-post"]||0)+(had?-1:1);Welcome();rpc("toggle_post_like",{p_token:S.token,p_card:"welcome-post"}).catch(x=>toast(errMsg(x)));return}
   if(d.cmopen){S.openCm[d.cmopen]=true;$("#welcome").classList.contains("open")?Welcome():render();return}
@@ -498,6 +512,7 @@ document.addEventListener("click",async e=>{
     try{await rpc("toggle_photo_like",{p_token:S.token,p_photo:id})}catch(x){toast(errMsg(x))}return}
   if(d.poll){const i=+d.poll;S.myPoll=i;S.pollCounts[i]++;render();try{await rpc("cast_poll_vote",{p_token:S.token,p_poll:POLL.id,p_option:i});toast("Vote in")}catch(x){S.myPoll=null;toast(errMsg(x))}await loadPublic().catch(()=>{});render();return}
   if(d.ans){S.trivia.picked=+d.ans;if(+d.ans===TRIVIA[S.trivia.i].a)S.trivia.score++;render();return}
+  if(d.fbs){const [k,n]=d.fbs.split(":");S.fbf[k]=+n;document.querySelectorAll(`[data-fbs^="${k}:"]`).forEach(x=>{const v=+x.dataset.fbs.split(":")[1];if(x.classList.contains("star"))x.classList.toggle("on",v<=S.fbf[k]);else x.setAttribute("aria-pressed",v===S.fbf[k])});return}
   if(d.nps){S.nps=+d.nps;document.querySelectorAll("[data-nps]").forEach(x=>x.setAttribute("aria-pressed",+x.dataset.nps===S.nps));return}
   if(d.stage){if(S.committee){S.stageLocal=null;await adminAct("admin_set_stage",{p_view:d.stage,p_pinned:null,p_poll_open:null,p_cloud_open:null})}else{S.stageLocal=d.stage;Stage()}return}
   if(d.adtab){S.adTab=d.adtab;render();scrollTo(0,0);return}
@@ -530,8 +545,11 @@ document.addEventListener("click",async e=>{
     case "next":{const t=S.trivia;if(t.i+1<TRIVIA.length){t.i++;t.picked=null;render()}else{try{await rpc("submit_trivia",{p_token:S.token,p_score:t.score});S.myTrivia=t.score}catch(x){toast(errMsg(x))}await loadPublic().catch(()=>{});render()}break}
     case "saverate":{const dr=S._draft||{id:d.sid,stars:(S.ratings[d.sid]||{}).stars};if(!dr.stars)return;const c=$("#rc").value.trim();b.disabled=true;
       try{await rpc("rate_session",{p_token:S.token,p_session:dr.id,p_stars:dr.stars,p_comment:c});S.ratings[dr.id]={stars:dr.stars,comment:c};S._draft=null;close();render();toast("Rating saved")}catch(x){b.disabled=false;toast(errMsg(x))}break}
-    case "overall":{if(S.nps==null){toast("Pick a score from 0 to 10");return}b.disabled=true;
-      try{await rpc("submit_feedback",{p_token:S.token,p_nps:S.nps,p_topic:$("#f1").value,p_improve:$("#f2").value});S.feedback={nps:S.nps};render();toast("Thank you! Certificate unlocked")}catch(x){b.disabled=false;toast(errMsg(x))}break}
+    case "overall":{const F=S.fbf;F.email=$("#fe").value.trim();FB_TEXT.forEach(([k])=>F[k]=$("#ft_"+k).value.trim());
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(F.email)){toast("Please enter a valid email");$("#fe").focus();return}
+      const miss=[...FB_SCALES.map(x=>x[0]),...FB_STARS.map(x=>x[0])].find(k=>!F[k]);if(miss){toast("Please answer every rating question");return}
+      const missT=FB_TEXT.find(([k])=>!F[k]);if(missT){toast("Please answer: "+missT[1]);$("#ft_"+missT[0]).focus();return}
+      b.disabled=true;try{await rpc("submit_feedback_v2",{p_token:S.token,p:F});S.feedback={...F};render();toast(S.ce.passed?"Thank you! Certificate unlocked":"Thank you for your feedback")}catch(x){b.disabled=false;toast(errMsg(x))}break}
     case "postphoto":{const pb=$("#pbtn");pb.disabled=true;pb.textContent="UPLOADING...";
       try{const path=`uploads/${(crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random().toString(36).slice(2))}.jpg`;
         const up=await sb.storage.from("photos").upload(path,S._pendingBlob,{contentType:"image/jpeg"});if(up.error)throw up.error;
@@ -565,14 +583,15 @@ document.addEventListener("click",async e=>{
     case "togpoll":await adminAct("admin_set_stage",{p_view:null,p_pinned:null,p_poll_open:!S.stage.poll_open,p_cloud_open:null});break;
     case "togcloud":await adminAct("admin_set_stage",{p_view:null,p_pinned:null,p_poll_open:null,p_cloud_open:!S.stage.cloud_open});break;
     case "exportxlsx":{try{await loadAdmin()}catch(x){}const t=d=>d?new Date(d).toLocaleString("en-SG",{timeZone:"Asia/Singapore",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}):"";
-      const rows=(S.adx||[]).map(x=>({"First Name":x.first_name,"Last Name":x.last_name,"Company":x.company,"SAPS Member":x.saps_member?"Yes":x.saps_member===false?"No":"","Committee":x.is_committee?"Yes":"","Check In Time (SGT)":t(x.checked_in_at),"Feedback Submitted (SGT)":t(x.feedback_first_at),"Feedback Last Updated (SGT)":t(x.feedback_last_at),"Recommend Score (0-10)":x.nps??"","CE Attempts":x.ce_attempts||0,"CE Best Score":x.ce_best_score!=null?`${x.ce_best_score}/${x.ce_total}`:"","CE Passed":x.ce_passed?"Yes":"No","CE Passed Time (SGT)":t(x.ce_passed_at),"CE Last Attempt (SGT)":t(x.ce_last_at),"Certificate Eligible":x.certificate_eligible?"Yes":"No"}));
+      const rows=(S.adx||[]).map(x=>({"First Name":x.first_name,"Last Name":x.last_name,"Company":x.company,"SAPS Member":x.saps_member?"Yes":x.saps_member===false?"No":"","Committee":x.is_committee?"Yes":"","Check In Time (SGT)":t(x.checked_in_at),"Feedback Submitted (SGT)":t(x.feedback_first_at),"Feedback Last Updated (SGT)":t(x.feedback_last_at),"Email":x.email||"","Overall Satisfaction (1-5)":x.satisfaction??"","Met Expectations (1-5)":x.expectations??"","Food":x.food??"","Venue":x.venue??"","Panel Discussion":x.panel??"","Posters":x.posters??"","Booths":x.booths??"","Programme Flow and Duration":x.flow??"","Most Valuable Sessions":x.valuable||"","Future Topics":x.future_topics||"","Other Feedback":x.other_feedback||"","CE Attempts":x.ce_attempts||0,"CE Best Score":x.ce_best_score!=null?`${x.ce_best_score}/${x.ce_total}`:"","CE Passed":x.ce_passed?"Yes":"No","CE Passed Time (SGT)":t(x.ce_passed_at),"CE Last Attempt (SGT)":t(x.ce_last_at),"Certificate Eligible":x.certificate_eligible?"Yes":"No"}));
       if(window.XLSX){const ws=XLSX.utils.json_to_sheet(rows);ws["!cols"]=Object.keys(rows[0]||{a:1}).map(k=>({wch:Math.max(12,k.length+2)}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"AudConnect 2026");XLSX.writeFile(wb,"AudConnect2026_attendance_CE_feedback.xlsx")}
       else{const keys=Object.keys(rows[0]||{});downloadCSV("AudConnect2026_attendance_CE_feedback.csv",[keys,...rows.map(r=>keys.map(k=>r[k]))])}
       break}
     case "exportatt":downloadCSV("audconnect2026-attendance.csv",[["First name","Last name","Company","SAPS member","Checked in (SGT)"],...S.ad.attendees.map(a=>[a.first_name,a.last_name,a.company,a.saps_member?"Yes":a.saps_member===false?"No":"",new Date(a.checked_in_at).toLocaleString("en-SG",{timeZone:"Asia/Singapore"})])]);break;
-    case "exportfb":downloadCSV("audconnect2026-feedback.csv",[["Type","Session","Score","Comment","Next year topic"],...S.ad.feedback.map(f=>["Event","",f.nps,f.improve,f.next_topic]),...S.ad.ratings.map(r=>["Session",(SESSIONS.find(s=>s.id===r.session_id)||{}).title||r.session_id,r.stars,r.comment,""])]);break;
+    case "exportfb":downloadCSV("audconnect2026-feedback.csv",[["Type","Item","Score","Comment"],...S.ad.feedback.flatMap(f=>[["Event","Overall satisfaction",f.satisfaction,""],["Event","Met expectations",f.expectations,""],...FB_STARS.map(([k,l])=>["Event",l,f[k],""]),["Event","Most valuable sessions","",f.valuable||""],["Event","Future topics","",f.next_topic||""],["Event","Other feedback","",f.other||""]]),...S.ad.ratings.map(r=>["Session",(SESSIONS.find(s=>s.id===r.session_id)||{}).title||r.session_id,r.stars,r.comment||""])]);break;
   }
 });
+document.addEventListener("input",e=>{const t=e.target;if(t.id==="fe")S.fbf.email=t.value;else if(t.id&&t.id.startsWith("ft_"))S.fbf[t.id.slice(3)]=t.value});
 document.addEventListener("dblclick",e=>{const im=e.target.closest("[data-dbl]");if(!im)return;const id=+im.dataset.dbl;if(!S.myLikes.has(id)){const btn=document.querySelector(`[data-like="${id}"]`);btn&&btn.click()}});
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.classList&&e.target.classList.contains("ag-in")){e.preventDefault();const b=document.querySelector(`[data-cmpost="${e.target.dataset.cmin}"]`);b&&b.click()}});
 document.addEventListener("change",e=>{if(e.target.id!=="pfile"||!e.target.files[0])return;const f=e.target.files[0];const rd=new FileReader();
