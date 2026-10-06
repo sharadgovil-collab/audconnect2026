@@ -17,6 +17,13 @@ const SPEAKERS={
   lz:{name:"Lee Zu Xuan",role:"Senior Audiologist",org:"Amazing Hearing Group",bio:["Lee Zu Xuan is an experienced audiologist with a strong academic foundation and a diverse professional background. He holds a Bachelor's degree in Biomedical Engineering and a Master's degree in Audiology from the National University of Singapore (NUS). Zu Xuan has developed a well-rounded career in audiology, with previous roles as a Product Audiologist at GN Group and at Cochlear Limited. He currently serves as Senior Audiologist at Amazing Hearing Group, where he continues to apply his clinical and technical expertise to deliver high-quality patient care."]},
 };
 const SPK_ORDER=["sg","su","jo","rt","rh","ct","tt","ls","fm","at","al","th","lz"];
+const POSTERS=[
+  {id:"p1",title:"Reducing the Lead Time for Hearing Aid Appointments in Changi General Hospital",team:"Steven Lee Lock Hey, Hazel Yeo Kai Hui, Deng Jing, Lim Wei Ting, Tee Yi Siang, Wendy Teo Bing Yu, Justina Tan Yu Han, Rijwanna Parveen, Firza Achmed Anguilla, Sabrina Tan Chin Lynn, Katrina Balcos De Luna & Jocelyn Ng Hwee Ling",org:"Changi General Hospital",key:"Median wait for a hearing aid evaluation fell from 18 weeks to 8 weeks, and stayed there after the project ended.",img:"poster1.jpg",thumb:"poster1-thumb.jpg"},
+  {id:"p2",title:"Introduction of Hearing Aid Service Drive Through (HAS-DT)",team:"Soo Ying Pei, Wong Geng Hui, Pang Wan Ngo & Winnie Ling Hoe Hui",org:"Alexandra Hospital, Allied Health Audiology",key:"Patients drop off faulty hearing aids without an appointment, freeing 56 appointment slots and saving 14 hours of staff time.",img:"poster2.jpg",thumb:"poster2-thumb.jpg"},
+  {id:"p3",title:"Integration of Otoscopy into the Nursing Triage Station at the ENT Centre",team:"Soo Ying Pei, Wong Geng Hui, Pang Wan Ngo, Naw Hla Hla Chit, Ong Susan, Nan Thet Thet Mon, Joey Kan Foong Yee, Mabelle Cheah Xin Yean & Arhaya Binte Ali",org:"Alexandra Hospital, Audiology & ENT Nursing",award:"Winner, Alexandra Hospital 2026 Quality Improvement Award",key:"Nurses trained by audiologists now check ears at triage, cutting the wait for ear clearance from 28 minutes to under a minute.",img:"poster3.jpg",thumb:"poster3-thumb.jpg"},
+];
+const SPONSORS=[["Platinum",["cochlear"]],["Gold",["oticon","phonak","signia","starkey","widex"]],["Silver",["resound"]]];
+const SPONSOR_NAMES={cochlear:"Cochlear",oticon:"Oticon",phonak:"Phonak",signia:"Signia",starkey:"Starkey",widex:"Widex",resound:"ReSound"};
 const SOCIETY={vision:"To be the leading voice in advancing audiology practice and hearing care for patients in Singapore.",mission:"To connect, support, and empower audiology professionals through learning, networking and advocacy.",values:["Ethical","Competent","Integrity","Social Responsibility","United"]};
 const COMMITTEE=[["c_sg","Sharad Govil","President"],["c_su","Su Junqiang","Vice-President"],["c_id","Isshani Devaraj","Treasurer"],["c_ls","Lee Si Ting","Secretary"],["c_af","Augustin Fiala","Public Affairs Officer"],["c_ck","Charis Koh","Social Activities Officer"],["c_ss","Sadrina Shah","Assistant Treasurer"],["c_kh","Kavya Hegde","Assistant Secretary"]];
 const SESSIONS=[
@@ -28,7 +35,7 @@ const SESSIONS=[
   {id:"t5",n:"05",time:"15:30",end:"16:00",title:"Amplifying Efficiency, Simplifying Workflows",sub:"The SGH GROSS x AI Story",spk:["at","al","th"],by:"Adam Tan, Alan Tseng & Teoh Hui Yee, SGH",rate:true},
   {id:"tea",time:"16:00",end:"16:30",title:"Tea Break",sub:"Exhibition booths and posters"},
   {id:"t6",n:"06",time:"16:30",end:"17:00",title:"Digital Health in Private Audiology Practice",sub:"From patient engagement to rehabilitation",spk:["lz"],by:"Lee Zu Xuan, Amazing Hearing",rate:true},
-  {id:"panel",n:"",time:"17:00",end:"17:20",title:"Panel Discussion",sub:"From innovation to implementation: Perspectives from the field",spk:["sg","jo","rt","at","ls","lz"],by:"Dr. Sharad Govil, Jessica Ong, Renato Tan, Adam Tan, Lee Si Ting & Lee Zu Xuan",rate:true},
+  {id:"panel",n:"",time:"17:00",end:"17:20",title:"Panel Discussion",sub:"From innovation to implementation: Perspectives from the field",spk:["sg","rt","at","ls","lz"],by:"Dr. Sharad Govil, Renato Tan, Adam Tan, Lee Si Ting & Lee Zu Xuan",rate:true},
   {id:"award",time:"17:20",end:"17:40",title:"Excellence Award",sub:"Recognising excellence and contribution to the audiology profession. Appreciation to speakers and poster presenters, followed by the group photo.",spk:["sg"],by:"Dr. Sharad Govil"},
   {id:"close",time:"17:40",end:"17:45",title:"Closing",sub:""},
 ];
@@ -186,7 +193,16 @@ function Prog(){const now=nowSession();return Hero()+`
     ${s.n?`<span class="sess-time">${fmt(s.time)} to ${fmt(s.end)} PM${S.ratings[s.id]?' <span class="pill ok">Rated</span>':""}</span>`:""}</span></button>`).join("")}</div>
   <p class="small muted" style="margin-top:14px;font-style:italic;text-align:center">${EVENT.cpe}</p>
   <div class="rule-h">Meet Our Speakers</div>
-  <div class="spk-grid">${SPK_ORDER.map(k=>`<button class="spk" data-spk="${k}">${photo(k)}<span class="n">${esc(SPEAKERS[k].name)}</span><span class="r">${esc(SPEAKERS[k].role)},<br>${esc(SPEAKERS[k].org)}</span></button>`).join("")}</div>`}
+  <div class="spk-grid">${SPK_ORDER.map(k=>`<button class="spk" data-spk="${k}">${photo(k)}<span class="n">${esc(SPEAKERS[k].name)}</span><span class="r">${esc(SPEAKERS[k].role)},<br>${esc(SPEAKERS[k].org)}</span></button>`).join("")}</div>
+  <div class="rule-h">Poster Presentations</div>
+  <div class="pst-list">${POSTERS.map(p=>`<button class="pst" data-poster="${p.id}"><img src="${p.thumb}" alt="" loading="lazy"><span class="pst-b">${p.award?`<span class="pill pst-aw">🏆 Award winner</span>`:""}<b>${esc(p.title)}</b><span class="small muted">${esc(p.org)}</span><span class="pst-k">${esc(p.key)}</span><span class="pst-more">View poster ›</span></span></button>`).join("")}</div>`}
+function Poster(id){const p=POSTERS.find(x=>x.id===id);return `${p.award?`<span class="pill pst-aw">🏆 ${esc(p.award)}</span>`:""}
+  <h2 style="margin:8px 0 6px;font-size:19px;font-weight:900;color:#fff;line-height:1.25">${esc(p.title)}</h2>
+  <p class="small" style="margin:0 0 4px;color:var(--red-t);font-weight:700">${esc(p.org)}</p><p class="small muted" style="margin:0 0 12px">${esc(p.team)}</p>
+  <a href="${p.img}" target="_blank" rel="noopener" class="pst-full"><img src="${p.img}" alt="Poster: ${esc(p.title)}"></a>
+  <p class="small muted" style="text-align:center;margin:8px 0 12px">Tap the poster to open it full size and zoom in.</p>
+  <button class="btn ghost" data-a="close">CLOSE</button>`}
+function Sponsors(){return `<section class="spn" aria-label="Our sponsors"><p class="spn-t">Thank you to our sponsors</p>${SPONSORS.map(([t,ks])=>`<div class="spn-tier"><span class="spn-l ${t.toLowerCase()}">${t}</span><div class="spn-row ${t.toLowerCase()}">${ks.map(k=>`<img src="${IMG["sp_"+k]}" alt="${SPONSOR_NAMES[k]}">`).join("")}</div></div>`).join("")}</section>`}
 
 function Sess(id){const s=SESSIONS.find(x=>x.id===id);return `<span class="sess-time" style="margin:0">${fmt(s.time)} to ${fmt(s.end)} PM</span>
   <h2 style="margin:6px 0 4px;font-size:21px;text-transform:uppercase;font-weight:900;color:var(--red-t)">${esc(s.title)}</h2>
@@ -444,7 +460,7 @@ function render(){
   if(!S.me){$("#root").innerHTML=`<div class="app" style="padding-bottom:0">${Register()}</div>`;return}
   if(S.tab==="qa"){S.tab="play";S.playSeg="qa"}if(S.playSeg==="photos"){S.playSeg="qa";S.tab="ag"}
   const tabs={prog:["Programme",Prog],play:["Engage",Engage],ag:["Audigram",Photos],fb:["CE",()=>S.quiz?`<h1 class="page-title">CE Quiz</h1><div style="height:12px"></div>`+CEQuiz():FB()],me:["Me",Me]};
-  $("#root").innerHTML=`<div class="app"><header class="top"><div class="logo-row"><img class="logo-img" src="${IMG.logo}" alt="SAPS"><div class="wordmark">AUDCONNECT 2026<b>NEXTGEN AUDIOLOGY</b></div></div><button class="hdr-btn" data-tab="me">${esc(S.me.fn)}</button></header><main>${tabs[S.tab][1]()}</main></div>
+  $("#root").innerHTML=`<div class="app"><header class="top"><div class="logo-row"><img class="logo-img" src="${IMG.logo}" alt="SAPS"><div class="wordmark">AUDCONNECT 2026<b>NEXTGEN AUDIOLOGY</b></div></div><button class="hdr-btn" data-tab="me">${esc(S.me.fn)}</button></header><main>${tabs[S.tab][1]()}${Sponsors()}</main></div>
   <nav class="tabs" aria-label="Main"><div class="in">${Object.entries(tabs).map(([k,[l]])=>`<button data-tab="${k}" ${S.tab===k?'aria-current="page"':""}>${I[k]}${l}</button>`).join("")}</div></nav>`;
   const qs=$("#qs");if(qs)qs.onchange=e=>{S.qaSession=e.target.value;render()};
 }
@@ -458,6 +474,7 @@ document.addEventListener("click",async e=>{
   if(d.mem){keepReg();S.reg.member=d.mem;render();return}
   if(d.sess){sheet(Sess(d.sess));return}
   if(d.spk){sheet(Spk(d.spk));return}
+  if(d.poster){sheet(Poster(d.poster));return}
   if(d.qa){S.qaSession=d.qa;S.tab="play";S.playSeg="qa";close();render();scrollTo(0,0);return}
   if(d.rate){sheet(Rate(d.rate));return}
   if(d.star){S._draft={id:d.sid,stars:+d.star};$("#sheet").querySelectorAll(".star").forEach((s,i)=>s.classList.toggle("on",i<+d.star));$("#rsave").disabled=false;return}
