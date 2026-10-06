@@ -48,7 +48,7 @@ const CLOUD_Q="One word for audiology in 2030";
 const EVENT_DATE="2026-10-10";
 
 let S={
-  token:null,me:null,committee:false,reg:{member:null},tab:"prog",qaSession:"t1",qaSort:"top",playSeg:"photos",
+  token:null,me:null,committee:false,reg:{member:null},tab:"prog",qaSession:"t1",qaSort:"top",playSeg:"qa",adQaSes:"all",
   q:[],myVotes:new Set(),myQs:new Set(),pollCounts:POLL.o.map(()=>0),myPoll:null,words:[],myWord:null,
   board:[],myTrivia:null,trivia:{i:0,picked:null,score:0},photos:[],likes:{},myLikes:new Set(),ce:{attempts:0,best:null,total:null,passed:false},cardsSeen:[],comments:{},postLikes:{},openCm:{},win:{open:false},quiz:null,welcome:null,
   stage:{view:"photos",pinned_question:null,poll_open:true,cloud_open:true},ratings:{},feedback:null,nps:null,
@@ -216,15 +216,18 @@ function Cert(){return certHTML(S.me.fn,S.me.ln)+`
   <p class="small" style="margin:12px 0 0;text-align:center;font-style:italic;color:#DCE1EE">${esc(EVENT.cpe)}</p>
   <div style="height:12px"></div><button class="btn" data-a="certpdf">DOWNLOAD PDF</button><div style="height:8px"></div><button class="btn ghost" data-a="close">DONE</button>`}
 
-function QA(){const qs=S.q.filter(q=>q.session_id===S.qaSession).sort((a,b)=>S.qaSort==="top"?(a.answered-b.answered)||b.votes-a.votes:b.id-a.id);
-  return `<h1 class="page-title">Q&amp;A</h1><p class="tag">Ask the speakers</p>
-  <label class="lbl" for="qs">Session</label>
+const sesLabel=id=>{const x=SESSIONS.find(v=>v.id===id);return x?(x.n?x.n+"  ":"")+x.title:"General"};
+const isSaps=q=>q.author_name==="SAPS";
+function qMeta(q){return `<div class="qmeta">${isSaps(q)?'<span class="pill saps">From SAPS</span>':`<span>${esc(q.author_name)}</span>`}<span class="qtag">${esc(sesLabel(q.session_id))}</span>${q.answered?'<span class="pill ok">Answered</span>':""}</div>`}
+function QA(){const qs=S.q.slice().sort((a,b)=>(isSaps(b)-isSaps(a))||(S.qaSort==="top"?(a.answered-b.answered)||b.votes-a.votes:b.id-a.id));
+  return `<div class="box"><label class="lbl" for="qs" style="margin-top:0">Your question is for</label>
   <select id="qs" class="field">${rateable().map(s=>`<option value="${s.id}" ${s.id===S.qaSession?"selected":""}>${s.n?s.n+"  ":""}${esc(s.title)}</option>`).join("")}</select>
-  <div style="height:12px"></div><textarea id="qt" class="field" rows="3" maxlength="240" placeholder="Type your question for the speaker"></textarea>
+  <div style="height:12px"></div><textarea id="qt" class="field" rows="3" maxlength="240" placeholder="Type your question"></textarea>
   <label style="display:flex;gap:8px;align-items:center;margin:10px 0" class="small"><input type="checkbox" id="anon"> Ask anonymously</label>
-  <button class="btn" data-a="ask">SEND QUESTION</button>
-  <div class="seg" style="margin-top:22px"><button data-sort="top" aria-pressed="${S.qaSort==="top"}">Most popular</button><button data-sort="new" aria-pressed="${S.qaSort==="new"}">Newest</button></div>
-  <div class="list">${qs.length?qs.map(q=>`<div class="q"><button class="up" data-up="${q.id}" aria-pressed="${S.myVotes.has(q.id)}" aria-label="Upvote">${I.up}${q.votes}</button><div style="flex:1"><div>${esc(q.body)}</div><div class="small muted">${esc(q.author_name)}${q.answered?' <span class="pill ok">Answered</span>':""}</div></div></div>`).join(""):`<div class="q"><span class="muted">No questions yet. Be the first to ask.</span></div>`}</div>`}
+  <button class="btn" data-a="ask">SEND QUESTION</button></div>
+  <p class="small muted" style="margin:18px 0 0">Like the questions you want answered. The most liked rise to the top for the moderator.</p>
+  <div class="seg" style="margin-top:10px"><button data-sort="top" aria-pressed="${S.qaSort==="top"}">Most liked</button><button data-sort="new" aria-pressed="${S.qaSort==="new"}">Newest</button></div>
+  <div class="list">${qs.length?qs.map(q=>`<div class="q${isSaps(q)?" q-saps":""}"><button class="up" data-up="${q.id}" aria-pressed="${S.myVotes.has(q.id)}" aria-label="Like this question">${I.up}${q.votes}</button><div style="flex:1"><div>${esc(q.body)}</div>${qMeta(q)}</div></div>`).join(""):`<div class="q"><span class="muted">No questions yet. Be the first to ask.</span></div>`}</div>`}
 
 const ago=d=>{const s=Math.max(1,(Date.now()-new Date(d))/1000);if(s<60)return "JUST NOW";const m=s/60;if(m<60)return Math.floor(m)+(Math.floor(m)===1?" MINUTE AGO":" MINUTES AGO");const h=m/60;if(h<24)return Math.floor(h)+(Math.floor(h)===1?" HOUR AGO":" HOURS AGO");return new Date(d).toLocaleDateString("en-SG",{day:"numeric",month:"long"}).toUpperCase()};
 const AG={heart:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.6s-7.6-4.6-9.5-9.3C1.1 7.8 3.3 4.2 6.9 4.2c2.1 0 3.6 1.2 5.1 3 1.5-1.8 3-3 5.1-3 3.6 0 5.8 3.6 4.4 7.1-1.9 4.7-9.5 9.3-9.5 9.3z"/></svg>',
@@ -235,9 +238,9 @@ function agComments(target,limit){const L=S.comments[target]||[];const open=S.op
   ${show.map(r=>`<p class="ag-cm"><b>${esc(r.author_name)}</b> ${esc(r.body)}</p>`).join("")}
   <div class="ag-add"><input class="ag-in" data-cmin="${target}" maxlength="200" placeholder="Add a comment…" aria-label="Add a comment"><button class="ag-post" data-cmpost="${target}">Post</button></div>`}
 function agBrand(){return `<div class="ag-brand"><span>Audigram</span></div>`}
-function Engage(){const g=S.playSeg;return `<h1 class="page-title">Engage</h1><p class="tag">Join in live</p><div style="height:14px"></div>
-  <div class="seg"><button data-seg="photos" aria-pressed="${g==="photos"}">Audigram</button><button data-seg="poll" aria-pressed="${g==="poll"}">Poll</button><button data-seg="cloud" aria-pressed="${g==="cloud"}">Words</button></div>
-  ${g==="photos"?Photos():g==="poll"?Poll():Cloud()}`}
+function Engage(){const g=S.playSeg;return `<h1 class="page-title">Engage</h1><p class="tag">Ask, vote and share live</p><div style="height:14px"></div>
+  <div class="seg"><button data-seg="qa" aria-pressed="${g==="qa"}">Q&amp;A</button><button data-seg="poll" aria-pressed="${g==="poll"}">Poll</button><button data-seg="cloud" aria-pressed="${g==="cloud"}">Words</button><button data-seg="photos" aria-pressed="${g==="photos"}">Audigram</button></div>
+  ${g==="qa"?QA():g==="photos"?Photos():g==="poll"?Poll():Cloud()}`}
 function Photos(){return `<div class="ag-head"><span class="ag-word">Audigram</span><span class="small muted">audconnect2026</span></div>
   <label class="upl" for="pfile">${I.cam}<b>Share your event photos on Audigram</b><span class="small muted">Snap a moment, add a caption, and the best ones appear on the big screen.</span></label>
   <input id="pfile" type="file" accept="image/*" style="position:absolute;left:-9999px" aria-label="Choose a photo">
@@ -352,7 +355,7 @@ function OrgCode(){return `<h2 style="margin-top:0;font-weight:900;text-transfor
 function Stage(){const v=S.stageLocal||S.stage.view;let body="";
   if(v==="poll"){const t=S.pollCounts.reduce((a,b)=>a+b,0);body=`<h3>${esc(POLL.q)}</h3>${POLL.o.map((o,i)=>{const pc=t?Math.round(S.pollCounts[i]/t*100):0;return `<div class="srow"><div class="lab"><span>${esc(o)}</span><span>${pc}%</span></div><div class="bar"><i style="width:${pc}%"></i></div></div>`}).join("")}<p class="muted">${t} votes</p>`}
   if(v==="cloud")body=`<h3>${CLOUD_Q}</h3><div class="cloud" style="gap:10px 28px">${cloudHtml(true)}</div>`;
-  if(v==="qa"){const s=nowSession();const sid=s&&s.rate?s.id:S.qaSession;const ss=SESSIONS.find(x=>x.id===sid);const pin=S.q.find(q=>q.id===S.stage.pinned_question);const qs=pin?[pin]:S.q.filter(q=>q.session_id===sid&&!q.answered).sort((a,b)=>b.votes-a.votes).slice(0,4);body=`<h3>${pin?"Now answering":"Top questions"}<br><span style="font-size:.5em;color:var(--red-t)">${esc(pin?SESSIONS.find(x=>x.id===pin.session_id).title:ss.title)}</span></h3>${qs.map(q=>`<div class="sq"><b>${q.votes}</b><span>${esc(q.body)}</span></div>`).join("")||"<p>No questions yet</p>"}`}
+  if(v==="qa"){const pin=S.q.find(q=>q.id===S.stage.pinned_question);const qs=pin?[pin]:S.q.filter(q=>!q.answered).sort((a,b)=>b.votes-a.votes).slice(0,4);body=`<h3>${pin?"Now answering":"Most liked questions"}</h3>${qs.map(q=>`<div class="sq"><b>${q.votes}</b><span>${esc(q.body)}<small class="sq-t">${isSaps(q)?"From SAPS · ":""}${esc(sesLabel(q.session_id))}</small></span></div>`).join("")||"<p>No questions yet</p>"}`}
   if(v==="photos"){const ps=S.photos.slice(0,6);body=`<h3><span class="ag-word" style="font-size:1.4em">Audigram</span> <span style="font-size:.5em;color:var(--red-t)">#AudConnect2026</span></h3><div class="wall">${ps.map(p=>`<figure><img src="${photoSrc(p)}" alt=""><figcaption>${esc(p.author_name)}</figcaption></figure>`).join("")}</div>`}
   if(v==="lb"){body=`<h3>Trivia leaderboard</h3>${S.board.map((r,i)=>`<div class="sq"><b>${i+1}</b><span style="flex:1">${esc(r.display_name)}</span><span>${r.score}</span></div>`).join("")||"<p>No scores yet</p>"}`}
   $("#stage").innerHTML=`<div class="hd"><div class="logo-row"><img class="logo-img" style="width:48px;height:48px" src="${IMG.logo}" alt=""><div class="wordmark">AUDCONNECT 2026<b>NEXTGEN AUDIOLOGY</b></div></div><span class="muted" style="font-weight:600">Join in at audconnect2026.com</span></div>
@@ -375,11 +378,11 @@ function AdOver(){const A=S.ad.attendees,n=A.length,mem=A.filter(a=>a.saps_membe
   <div class="acts">${[["photos","Audigram wall"],["poll","Poll results"],["cloud","Word cloud"],["qa","Top questions"]].map(([k,l])=>`<button class="act ${S.stage.view===k?"on":""}" data-adstage="${k}">${l}</button>`).join("")}</div>
   <div style="height:12px"></div><button class="btn" data-a="stage">OPEN STAGE SCREEN</button></div>
   <div class="rule-h">Who's Here</div><div class="box">${top.length?top.map(([c,v])=>`<div style="margin-bottom:10px"><div class="small" style="display:flex;justify-content:space-between"><span>${esc(c)}</span><b>${v}</b></div><div class="hbar"><i style="width:${v/mx*100}%"></i></div></div>`).join(""):'<span class="muted small">No check ins yet</span>'}</div>`}
-function AdQA(){const qs=S.ad.questions.filter(q=>q.session_id===S.qaSession).sort((a,b)=>(a.answered-b.answered)||b.votes-a.votes);const pin=S.stage.pinned_question;
-  return `<label class="lbl" for="aqs" style="margin-top:0">Session</label><select id="aqs" class="field">${rateable().map(s=>`<option value="${s.id}" ${s.id===S.qaSession?"selected":""}>${s.n?s.n+"  ":""}${esc(s.title)} (${S.ad.questions.filter(q=>q.session_id===s.id&&!q.hidden).length})</option>`).join("")}</select>
-  <p class="small muted" style="margin-top:10px">Ranked by upvotes. Put the best one on screen, then mark it answered once the speaker responds.</p>
-  <div class="list">${qs.length?qs.map(q=>`<div class="q" style="${q.hidden?"opacity:.4":""}"><div class="up" style="cursor:default">${I.up}${q.votes}</div><div style="flex:1"><div>${esc(q.body)}</div><div class="small muted">${esc(q.author_name)}${q.answered?' <span class="pill ok">Answered</span>':""}${pin===q.id?' <span class="pill">On screen</span>':""}${q.hidden?' <span class="pill" style="background:#555">Hidden</span>':""}</div>
-  <div class="acts"><button class="act ${pin===q.id?"on":""}" data-pin="${q.id}">${pin===q.id?"Remove from screen":"Show on screen"}</button><button class="act" data-ans2="${q.id}" data-v="${!q.answered}">${q.answered?"Mark unanswered":"Mark answered"}</button><button class="act" data-hide="${q.id}" data-v="${!q.hidden}">${q.hidden?"Unhide":"Hide"}</button></div></div></div>`).join(""):`<div class="q"><span class="muted">No questions for this session yet.</span></div>`}</div>`}
+function AdQA(){const f=S.adQaSes||"all";const all=S.ad.questions;const qs=all.filter(q=>f==="all"||q.session_id===f).sort((a,b)=>(a.answered-b.answered)||b.votes-a.votes);const pin=S.stage.pinned_question;
+  return `<label class="lbl" for="aqs" style="margin-top:0">Show</label><select id="aqs" class="field"><option value="all" ${f==="all"?"selected":""}>All sessions, ranked by likes (${all.filter(q=>!q.hidden).length})</option>${rateable().map(s=>`<option value="${s.id}" ${s.id===f?"selected":""}>${s.n?s.n+"  ":""}${esc(s.title)} (${all.filter(q=>q.session_id===s.id&&!q.hidden).length})</option>`).join("")}</select>
+  <p class="small muted" style="margin-top:10px">Most liked first across the whole event. Each question shows the session it was asked for. Put one on screen for the moderator, then mark it answered.</p>
+  <div class="list">${qs.length?qs.map((q,k)=>`<div class="q" style="${q.hidden?"opacity:.4":""}"><div class="up" style="cursor:default">${I.up}${q.votes}</div><div style="flex:1"><div><b class="muted" style="margin-right:6px">#${k+1}</b>${esc(q.body)}</div>${qMeta(q)}<div class="qmeta">${pin===q.id?'<span class="pill">On screen</span>':""}${q.hidden?'<span class="pill" style="background:#555">Hidden</span>':""}</div>
+  <div class="acts"><button class="act ${pin===q.id?"on":""}" data-pin="${q.id}">${pin===q.id?"Remove from screen":"Show on screen"}</button><button class="act" data-ans2="${q.id}" data-v="${!q.answered}">${q.answered?"Mark unanswered":"Mark answered"}</button><button class="act" data-hide="${q.id}" data-v="${!q.hidden}">${q.hidden?"Unhide":"Hide"}</button></div></div></div>`).join(""):`<div class="q"><span class="muted">No questions yet.</span></div>`}</div>`}
 function AdEng(){const t=S.pollCounts.reduce((a,b)=>a+b,0);
   return `<div class="rule-h" style="margin-top:6px">Photos</div><div class="box"><p class="small muted">Hide anything unsuitable. Hidden photos disappear from phones and the big screen.</p>
   <div class="thumbs">${S.ad.photos.map(p=>`<div class="thumb" style="${p.hidden?"opacity:.35":""}"><img src="${photoSrc(p)}" alt="" loading="lazy"><button class="act ${p.hidden?"":"on"}" data-hidephoto="${p.id}" data-v="${!p.hidden}">${p.hidden?"Unhide":"Hide"}</button></div>`).join("")||'<span class="muted small">No photos yet</span>'}</div>
@@ -434,9 +437,10 @@ function downloadCSV(name,rows){const csv=rows.map(r=>r.map(v=>`"${String(v??"")
 /* ============ Render ============ */
 function renderQuiz(){render();scrollTo(0,0)}
 function render(){
-  if(S.admin){$("#root").innerHTML=Admin();const a=$("#aqs");if(a)a.onchange=e=>{S.qaSession=e.target.value;render()};const aq=$("#attq");if(aq)aq.oninput=e=>{S.attQ=e.target.value;const p=e.target.selectionStart;render();const n=$("#attq");n.focus();n.setSelectionRange(p,p)};return}
+  if(S.admin){$("#root").innerHTML=Admin();const a=$("#aqs");if(a)a.onchange=e=>{S.adQaSes=e.target.value;render()};const aq=$("#attq");if(aq)aq.oninput=e=>{S.attQ=e.target.value;const p=e.target.selectionStart;render();const n=$("#attq");n.focus();n.setSelectionRange(p,p)};return}
   if(!S.me){$("#root").innerHTML=`<div class="app" style="padding-bottom:0">${Register()}</div>`;return}
-  const tabs={prog:["Programme",Prog],qa:["Q&A",QA],play:["Engage",Engage],fb:["CE",()=>S.quiz?`<h1 class="page-title">CE Quiz</h1><div style="height:12px"></div>`+CEQuiz():FB()],me:["Me",Me]};
+  if(S.tab==="qa"){S.tab="play";S.playSeg="qa"}
+  const tabs={prog:["Programme",Prog],play:["Engage",Engage],fb:["CE",()=>S.quiz?`<h1 class="page-title">CE Quiz</h1><div style="height:12px"></div>`+CEQuiz():FB()],me:["Me",Me]};
   $("#root").innerHTML=`<div class="app"><header class="top"><div class="logo-row"><img class="logo-img" src="${IMG.logo}" alt="SAPS"><div class="wordmark">AUDCONNECT 2026<b>NEXTGEN AUDIOLOGY</b></div></div><button class="hdr-btn" data-tab="me">${esc(S.me.fn)}</button></header><main>${tabs[S.tab][1]()}</main></div>
   <nav class="tabs" aria-label="Main"><div class="in">${Object.entries(tabs).map(([k,[l]])=>`<button data-tab="${k}" ${S.tab===k?'aria-current="page"':""}>${I[k]}${l}</button>`).join("")}</div></nav>`;
   const qs=$("#qs");if(qs)qs.onchange=e=>{S.qaSession=e.target.value;render()};
@@ -451,7 +455,7 @@ document.addEventListener("click",async e=>{
   if(d.mem){keepReg();S.reg.member=d.mem;render();return}
   if(d.sess){sheet(Sess(d.sess));return}
   if(d.spk){sheet(Spk(d.spk));return}
-  if(d.qa){S.qaSession=d.qa;S.tab="qa";close();render();scrollTo(0,0);return}
+  if(d.qa){S.qaSession=d.qa;S.tab="play";S.playSeg="qa";close();render();scrollTo(0,0);return}
   if(d.rate){sheet(Rate(d.rate));return}
   if(d.star){S._draft={id:d.sid,stars:+d.star};$("#sheet").querySelectorAll(".star").forEach((s,i)=>s.classList.toggle("on",i<+d.star));$("#rsave").disabled=false;return}
   if(d.sort){S.qaSort=d.sort;render();return}
