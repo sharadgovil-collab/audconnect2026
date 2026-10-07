@@ -37,7 +37,7 @@ const hasRole=(m,r)=>((m&&m.roles)||[]).includes(r);
 function roleTags(m){const t=[];if(hasRole(m,"organiser"))t.push(["organiser","Organiser"]);if(hasRole(m,"host"))t.push(["host","Host"]);if(hasRole(m,"speaker"))t.push(["speaker","Speaker"]);if(hasRole(m,"poster"))t.push(["poster","Poster Presenter"]);if(!t.length)t.push(["delegate",hasRole(m,"student")?"Delegate (Student)":hasRole(m,"nonaud")?"Delegate (Non-Aud)":"Delegate"]);return t}
 const apprRole=m=>hasRole(m,"host")?"Host":hasRole(m,"speaker")?"Speaker":hasRole(m,"poster")?"Poster Presenter":null;
 const fullName=m=>[m.sal,m.fn,m.ln].filter(Boolean).join(" ");
-const POINTS_TABLE=[["Check in by 2:00 PM","5","once"],["Ask a question","2","up to 5"],["Your question is put on screen","+3",""],["Post a photo on Audigram","5","up to 4"],["Each like your photo receives","1","up to 10 per photo"],["Comment on a post","2","up to 10"],["Like a photo","1","up to 10"],["Vote in a poll","2","each poll"],["Add a word to a word cloud","2","each prompt"],["Rate a talk","2","each talk"],["Thumbs up a poster","1","each poster"],["Submit event feedback","5","once"],["Tell us someone new you met (feedback)","+8","once"]];
+const POINTS_TABLE=[["Be there","Check in by 2:00 PM: 5","5"],["Ask","Each question: 2","10"],["Vote","Each poll vote or word cloud word: 2","10"],["Share","Each photo: 2, each comment: 1","10"],["Appreciate","Rate a talk: 2, like a photo or poster: 1","10"],["Give back","Feedback form: 5, someone new you met: 5","10"]];
 const SOCIETY={vision:"To be the leading voice in advancing audiology practice and hearing care for patients in Singapore.",mission:"To connect, support, and empower audiology professionals through learning, networking and advocacy.",values:["Ethical","Competent","Integrity","Social Responsibility","United"]};
 const COMMITTEE=[["c_sg","Sharad Govil","President"],["c_su","Su Junqiang","Vice-President"],["c_id","Isshani Devaraj","Treasurer"],["c_ls","Lee Si Ting","Secretary"],["c_af","Augustin Fiala","Public Affairs Officer"],["c_ck","Charis Koh","Social Activities Officer"],["c_ss","Sadrina Shah","Assistant Treasurer"],["c_kh","Kavya Hegde","Assistant Secretary"]];
 const SESSIONS=[
@@ -90,7 +90,7 @@ const rateable=()=>SESSIONS.filter(s=>s.rate);
 const avatarUrl=p=>p?`${SB_URL}/storage/v1/object/public/photos/${p}`:null;
 const photoSrc=p=>p.storage_path.startsWith("static/")?IMG[p.storage_path.slice(7)]:`${SB_URL}/storage/v1/object/public/photos/${p.storage_path}`;
 const errMsg=e=>{const m=(e&&(e.message||e.error_description))||"";if(/company name/i.test(m))return "Please enter your company name";if(/opens at 5/i.test(m))return "Not open yet. Please check with the SAPS team";if(/closed/i.test(m))return m.charAt(0).toUpperCase()+m.slice(1);if(/not checked in/i.test(m))return "Please check in again";if(/Failed to fetch|NetworkError|network/i.test(m))return "No connection. Please try again";return "Something went wrong. Please try again"};
-async function rpc(fn,args){const {data,error}=await sb.rpc(fn,args);if(error)throw error;return data}
+async function rpc(fn,args){const {data,error}=await sb.rpc(fn,args);if(error){if(S.token&&args&&args.p_token===S.token&&/not checked in/i.test(error.message||"")){try{localStorage.removeItem("ac26_token")}catch(e){}toast("Your check-in was reset. Please check in again");setTimeout(()=>location.reload(),1800)}throw error}return data}
 
 /* ============ Loading shared data ============ */
 async function loadPublic(){
@@ -131,9 +131,9 @@ async function loadMine(){
 function setMe(p){S.me={fn:p.first_name,ln:p.last_name,co:p.company,member:p.saps_member===true?"yes":p.saps_member===false?"no":null,sal:p.salutation||"",title:p.title||"",mid:p.member_id||"",roles:p.roles||[],walk_in:p.walk_in,photo:p.photo_path||null};
   S.committee=p.committee===true;S.super=p.super===true}
 let _ptsT=null;
-async function bumpPoints(){clearTimeout(_ptsT);_ptsT=setTimeout(async()=>{try{const old=S.pts?S.pts.points:null;S.pts=await rpc("my_points",{p_token:S.token});
-  const h=$("#hdrPts");if(h)h.textContent=S.pts.points;if(old!=null&&S.pts.points>old)setTimeout(()=>toast(`+${S.pts.points-old} point${S.pts.points-old>1?"s":""} ⭐`),1400)}catch(e){}},500)}
-async function loadAdmin(){if(!S.committee)return;const [a,x,cm,pp,pt,lg,pr]=await Promise.all([rpc("admin_dashboard",{p_token:S.token}),rpc("admin_export",{p_token:S.token}),rpc("admin_comments",{p_token:S.token}).catch(()=>[]),rpc("admin_prompts",{p_token:S.token}).catch(()=>[]),rpc("admin_points",{p_token:S.token}).catch(()=>[]),S.super?rpc("super_log",{p_token:S.token}).catch(()=>[]):Promise.resolve([]),rpc("poll_results",{p_token:S.token}).catch(()=>null)]);S.ad=a;S.adx=x;S.adc=cm||[];S.adPrompts=pp||[];S.adPts=pt||[];S.adLog=lg||[];if(pr)S.polls=pr}
+async function bumpPoints(){clearTimeout(_ptsT);_ptsT=setTimeout(async()=>{try{const was=S.pts&&S.pts.in_draw;S.pts=await rpc("my_points",{p_token:S.token});
+  if(S.pts.in_draw&&!was){if(!$("#hdrPts")){const b=document.querySelector('.hdr-btn[data-tab="me"]');if(b)b.insertAdjacentHTML("beforeend",' <span class="hdr-pts" id="hdrPts">🎟️</span>')}setTimeout(()=>toast("🎟️ You're in the prize draw!"),1200)}}catch(e){}},500)}
+async function loadAdmin(){if(!S.committee)return;const [a,x,cm,pp,pt,lg,pr,pz]=await Promise.all([rpc("admin_dashboard",{p_token:S.token}),rpc("admin_export",{p_token:S.token}),rpc("admin_comments",{p_token:S.token}).catch(()=>[]),rpc("admin_prompts",{p_token:S.token}).catch(()=>[]),rpc("admin_points",{p_token:S.token}).catch(()=>[]),S.super?rpc("super_log",{p_token:S.token}).catch(()=>[]):Promise.resolve([]),rpc("poll_results",{p_token:S.token}).catch(()=>null),rpc("prize_state",{p_token:S.token}).catch(()=>null)]);S.ad=a;S.adx=x;S.adc=cm||[];S.adPrompts=pp||[];S.adPts=pt||[];S.adLog=lg||[];if(pr)S.polls=pr;if(pz)S.prize=pz}
 
 let _t=null;
 setInterval(async()=>{if(S.token&&!(S.win&&S.win.open)){try{const w=await rpc("window_status",{p_token:S.token});if(w.open!==S.win.open){S.win=w;softRender()}}catch(e){}}},60000);
@@ -148,6 +148,7 @@ function renderStageIfOpen(){if($("#stage").classList.contains("open"))Stage()}
 function subscribe(){
   sb.channel("live").on("postgres_changes",{event:"*",schema:"public"},refreshSoon).subscribe();
   setInterval(refreshSoon,20000);
+  setInterval(()=>{if(S.token&&!S.admin)rpc("my_points",{p_token:S.token}).then(p=>{S.pts=p}).catch(()=>{})},30000);
 }
 
 function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2200)}
@@ -329,15 +330,15 @@ function Photos(){return `<div class="ag-head"><span class="ag-word">Audigram</s
   <input id="pfile" type="file" accept="image/*" style="position:absolute;left:-9999px" aria-label="Choose a photo">
   ${S.photos.length?"":`<div class="ag-card ag-empty"><div class="ag-empty-ic">${I.cam}</div><b>Share Photos</b><p>When people share photos from AudConnect 2026, they will appear here.</p><label class="ag-empty-btn" for="pfile">Share your first photo</label></div>`}
   <div class="feed ag-feed">${S.photos.map(p=>{const t="photo:"+p.id;const n=S.likes[p.id]||0;const liked=S.myLikes.has(p.id);return `<article class="ag-card">
-   <header class="ag-top">${postAvatar(p)}<div><b>${authorName(p)}</b><span>AudConnect 2026 · Suntec Singapore</span></div></header>
+   <header class="ag-top">${postAvatar(p)}<div style="flex:1"><b>${authorName(p)}</b><span>AudConnect 2026 · Suntec Singapore</span></div>${S.super?`<button class="act danger" data-sdel="photo:${p.id}">Delete</button>`:S.committee?`<button class="act" data-hidephoto="${p.id}" data-v="true">Hide</button>`:""}</header>
    <div class="ag-media"><img src="${photoSrc(p)}" alt="${esc(p.caption||"Event photo")}" loading="lazy" data-dbl="${p.id}"></div>
    <div class="ag-acts"><button class="ag-ic heart ${liked?"on":""}" data-like="${p.id}" aria-pressed="${liked}" aria-label="Like">${AG.heart}</button><button class="ag-ic" data-cmfocus="${t}" aria-label="Comment">${AG.bubble}</button></div>
    <p class="ag-likes">${n} like${n===1?"":"s"}</p>
-   ${p.caption?`<p class="ag-cap"><b>${authorName(p)}</b> ${esc(p.caption)}</p>`:""}
+   ${p.caption?`<p class="ag-cap${p.caption.length>110?" clamp":""}" onclick="this.classList.remove('clamp')"><b>${authorName(p)}</b> ${esc(p.caption)}</p>`:""}
    ${agComments(t)}
    <p class="ag-time">${ago(p.created_at)}</p></article>`}).join("")}</div>`}
 function PhotoCompose(){return `<img src="${S._pendingUrl}" alt="" style="width:100%;max-height:50vh;object-fit:contain;border-radius:12px;background:#000">
-  <label class="lbl" for="pcap">Caption (optional)</label><input id="pcap" class="field" maxlength="120" placeholder="Say something about this moment">
+  <label class="lbl" for="pcap">Caption (optional)</label><textarea id="pcap" class="field" rows="3" maxlength="400" placeholder="Say something about this moment" oninput="document.getElementById('pcapn').textContent=this.value.length+' / 400'"></textarea><div id="pcapn" class="small muted" style="text-align:right;margin-top:4px">0 / 400</div>
   ${S.super&&S.asSaps?`<p class="small" style="margin-top:10px;color:var(--gold);font-weight:700">Posting as SAPS ✓</p>`:""}<p class="small muted" style="margin-top:10px">Photos are visible to everyone at the event. Please ask before posting photos of others.</p>
   <button class="btn" data-a="postphoto" id="pbtn">SHARE ON AUDIGRAM</button>`}
 const livePoll=()=>S.polls.find(p=>p.status==="live");
@@ -384,7 +385,7 @@ const FB_TEXT=[["valuable","Which session(s) were the most valuable to you?"],["
 function FBForm(){const F=S.fbf;return `<p class="small muted" style="margin:0 0 4px">Please rate each item. The written questions are optional. Rate the talks below, then tap Submit Feedback at the bottom.</p>
   ${FB_SCALES.map(([k,q,lo,hi])=>`<label class="lbl">${q}</label><div class="scale5">${[1,2,3,4,5].map(n=>`<button data-fbs="${k}:${n}" aria-pressed="${F[k]===n}">${n}</button>`).join("")}</div><div class="small muted" style="display:flex;justify-content:space-between;margin-top:4px"><span>${lo}</span><span>${hi}</span></div>`).join("")}
   <label class="lbl">Rate each part of the event</label><div class="fbstars">${FB_STARS.map(([k,l])=>`<div class="fbst"><span>${l}</span><span class="stars sm">${[1,2,3,4,5].map(n=>`<button class="star ${(F[k]||0)>=n?"on":""}" data-fbs="${k}:${n}" aria-label="${l} ${n} star${n>1?"s":""}">${I.star}</button>`).join("")}</span></div>`).join("")}</div>
-  ${FB_TEXT.map(([k,q])=>`<label class="lbl" for="ft_${k}">${q} ${k==="met"?'<span class="bonus">✨ +8 bonus points</span>':'<span class="opt-l">(optional)</span>'}</label>${k==="met"?'<p class="small muted" style="margin:0 0 6px">Type their name. Making new connections is what today is about!</p>':""}<textarea id="ft_${k}" class="field" rows="2" maxlength="1000"${k==="met"?' placeholder="e.g. Jane Tan from Changi General Hospital"':""}>${esc(F[k]||"")}</textarea>`).join("")}`}
+  ${FB_TEXT.map(([k,q])=>`<label class="lbl" for="ft_${k}">${q} ${k==="met"?'<span class="bonus">🎟️ Counts towards the prize draw</span>':'<span class="opt-l">(optional)</span>'}</label>${k==="met"?'<p class="small muted" style="margin:0 0 6px">Type their name. Making new connections is what today is about!</p>':""}<textarea id="ft_${k}" class="field" rows="2" maxlength="1000"${k==="met"?' placeholder="e.g. Jane Tan from Changi General Hospital"':""}>${esc(F[k]||"")}</textarea>`).join("")}`}
 function FB(){const done=rateable().filter(s=>S.ratings[s.id]).length;const W=S.win||{};
   const rate=`<div class="rule-h">Rate the Talks</div><div class="list">${rateable().map(s=>`<button class="item" data-rate="${s.id}"><span class="num" style="font-size:20px;min-width:30px">${s.n||"P"}</span><span style="flex:1;font-weight:700;font-size:14px">${esc(s.title)}</span>${S.ratings[s.id]?`<span class="pill ok">${S.ratings[s.id].stars} ★</span>`:'<span class="pill">Rate</span>'}</button>`).join("")}</div>
   <p class="small muted" style="margin-top:8px">${done} of ${rateable().length} rated. You can rate talks at any time.</p>`;
@@ -436,12 +437,15 @@ function Me(){const m=S.me;const sp=sponsorOf(m.co);const ar=apprRole(m);return 
   <div class="org-mini">${S.committee?`<button class="linkbtn" data-a="admin">Open organiser dashboard</button>`:`<button class="linkbtn" data-a="orgcode">Organiser only</button>`}<span>For the SAPS committee</span>
   ${S.super?`<span class="small" style="margin-top:8px">Super admin ✓</span>`:`<button class="linkbtn" data-a="supercode" style="margin-top:6px">Super admin</button>`}</div>`}
 function PointsCard(){const P=S.pts;if(!P)return "";
-  if(!P.eligible)return `<div class="pts"><div class="pts-n">⭐ ${P.points}<small> points</small></div><p class="small muted" style="margin:6px 0 0">Organisers are not part of the prize. Thank you for cheering everyone on!</p><button class="linkbtn" data-a="howpts">How to earn points</button></div>`;
-  const rk=P.rank<=20?`You're <b>#${P.rank}</b> of ${P.of}`:(P.rank<=P.of/2?"You're in the top half. Keep going!":"Every activity earns points. Keep going!");
-  const gap=P.rank>10&&P.tenth!=null?Math.max(1,P.tenth-P.points+1):0;
-  return `<div class="pts"><div class="pts-n">⭐ ${P.points}<small> points</small></div><p style="margin:6px 0 0">${rk}</p>${gap?`<p class="small muted" style="margin:4px 0 0">${gap} more point${gap>1?"s":""} to reach the top 10.</p>`:""}<p class="small muted" style="margin:6px 0 0">The most engaged attendees win a prize, announced at Closing.</p><button class="linkbtn" data-a="howpts">How to earn points</button></div>`}
-function HowPts(){return `<h2 style="margin:6px 0 10px;font-size:20px;font-weight:900">How to earn points</h2><div class="list">${POINTS_TABLE.map(([a,p,c])=>`<div class="item" style="padding:10px 14px"><span style="flex:1;font-size:14px">${a}${c?`<span class="small muted" style="display:block">${c}</span>`:""}</span><b style="color:var(--gold)">${p}</b></div>`).join("")}</div>
-  <p class="small muted" style="margin-top:10px">Points stop counting at 5:35 PM. Hidden posts do not earn points. Prize winners are announced at Closing.</p><button class="btn ghost" data-a="close">CLOSE</button>`}
+  if(!P.eligible)return `<div class="pts"><b>🎟️ Prize draw</b><p class="small muted" style="margin:6px 0 0">Organisers are not part of the prize draw. Thank you for cheering everyone on!</p><button class="linkbtn" data-a="howpts">How the prize draw works</button></div>`;
+  if(P.won)return `<div class="pts won"><div style="font-size:34px">🏆</div><b style="font-size:18px">Congratulations, you won a prize!</b><p class="small" style="margin:6px 0 0">Please see the SAPS team at the registration desk to collect it.</p></div>`;
+  const pc=Math.min(100,Math.round(P.points/P.min*100));
+  return `<div class="pts"><b>🎟️ Prize draw</b>${P.in_draw?`<p style="margin:8px 0 0;font-weight:700;color:var(--gold)">You're in the draw!</p><p class="small muted" style="margin:4px 0 0">Keep taking part. The more you join in, the better your chances.</p>`
+    :`<div class="hbar" style="margin:10px 0 6px"><i style="width:${pc}%;background:var(--gold)"></i></div><p class="small muted" style="margin:0">Keep taking part to enter the draw.</p>`}
+    <p class="small muted" style="margin:8px 0 0">Three winners are picked by the app at Closing.</p><button class="linkbtn" data-a="howpts">How the prize draw works</button></div>`}
+function HowPts(){return `<h2 style="margin:6px 0 10px;font-size:20px;font-weight:900">How the prize draw works</h2>
+  <p>Every way you take part counts towards the draw:</p><div class="list">${["Checking in early","Asking questions","Voting in polls and word clouds","Sharing photos and comments on Audigram","Rating the talks and liking posters and photos","Giving your feedback, and telling us someone new you met"].map(t=>`<div class="item" style="padding:10px 14px;font-size:14px">✓ ${t}</div>`).join("")}</div>
+  <p class="small muted" style="margin-top:10px">Once you've taken part enough, you're entered into the draw. The more you join in, the better your chances. Three winners are picked by the app at Closing. Activity counts until 5:35 PM. Organisers are not eligible.</p><button class="btn ghost" data-a="close">CLOSE</button>`}
 function EditProf(){const m=S.me;const src=S._avUrl||(m.photo?avatarUrl(m.photo):null);return `<h2 style="margin:6px 0 10px;font-size:20px;font-weight:900">Edit profile</h2>
   <div class="ep-ph"><span class="ep-av" id="epAv">${src?`<img src="${src}" alt="">`:`<b>${esc(ini(m.fn+" "+m.ln))}</b>`}</span><span style="display:flex;flex-direction:column;gap:4px;align-items:flex-start"><label for="avfile" class="linkbtn">${src?"Change photo":"Add a photo"}</label>${src?'<button class="linkbtn" data-a="avremove">Remove photo</button>':""}</span></div>
   <input id="avfile" type="file" accept="image/*" style="position:absolute;left:-9999px">
@@ -461,7 +465,7 @@ function OrgCode(){return `<h2 style="margin-top:0;font-weight:900;text-transfor
   <label class="lbl" for="oc">Organiser code</label><input id="oc" class="field" autocomplete="off" autocapitalize="characters" spellcheck="false">
   <div style="height:14px"></div><button class="btn" data-a="unlock" id="obtn">UNLOCK</button>`}
 /* ============ Stage screen (LED wall) ============ */
-function Stage(){const v=S.stageLocal||S.stage.view;let body="";
+function Stage(){const v=S.stageLocal||S.stage.view;if(_drawSpin&&v==="draw"&&$("#drn"+_drawSpin.slot))return;let body="";
   if(v==="poll"){const lp=livePoll(),lc=lastClosed();
     if(lp)body=`<h3>${esc(lp.question)}</h3><div class="st-opts">${lp.options.map((o,i)=>`<div class="st-opt"><b>${String.fromCharCode(65+i)}</b>${esc(o)}</div>`).join("")}</div><div class="st-count"><b>${lp.total}</b> vote${lp.total===1?"":"s"} so far</div><p class="muted" style="text-align:center;margin-top:10px">Vote now at audconnect2026.com. Results are revealed when the poll closes.</p>`;
     else if(lc){const c=lc.counts||[];const t=c.reduce((a,b)=>a+b,0);const mx=Math.max(0,...c);body=`<h3>${esc(lc.question)}</h3>${lc.options.map((o,i)=>{const n=c[i]||0;const pc=t?Math.round(n/t*100):0;return `<div class="srow${n&&n===mx?" lead":""}"><div class="lab"><span>${esc(o)}</span><span>${pc}%</span></div><div class="bar grow"><i style="--w:${pc}%;animation-delay:${i*.18}s"></i></div></div>`}).join("")}<p class="muted">${t} vote${t===1?"":"s"}</p>`}
@@ -469,10 +473,19 @@ function Stage(){const v=S.stageLocal||S.stage.view;let body="";
   if(v==="cloud"){const lp=livePrompt()||S.prompts.find(p=>p.status==="closed");body=lp?`<h3>${esc(lp.prompt)}</h3><div class="cloud" style="gap:10px 28px">${cloudHtml(lp.id,true)}</div>`:`<h3>Word cloud</h3><p class="muted">The next question will appear here.</p>`}
   if(v==="qa"){const pin=S.q.find(q=>q.id===S.stage.pinned_question);const qs=pin?[pin]:S.q.filter(q=>!q.answered).sort((a,b)=>b.votes-a.votes).slice(0,4);body=`<h3>${pin?"Now answering":"Most liked questions"}</h3>${qs.map(q=>`<div class="sq"><b>${q.votes}</b><span>${esc(q.body)}<small class="sq-t">${isSaps(q)?"From SAPS · ":""}${esc(sesLabel(q.session_id))}</small></span></div>`).join("")||"<p>No questions yet</p>"}`}
   if(v==="photos"){const ps=S.photos.slice(0,6);body=`<h3><span class="ag-word" style="font-size:1.4em">Audigram</span> <span style="font-size:.5em;color:var(--red-t)">#AudConnect2026</span></h3><div class="wall">${ps.map(p=>`<figure><img src="${photoSrc(p)}" alt=""><figcaption>${esc(p.author_name)}</figcaption></figure>`).join("")}</div>`}
+  if(v==="draw")body=StageDraw();
   if(v==="lb"){body=`<h3>Trivia leaderboard</h3>${S.board.map((r,i)=>`<div class="sq"><b>${i+1}</b><span style="flex:1">${esc(r.display_name)}</span><span>${r.score}</span></div>`).join("")||"<p>No scores yet</p>"}`}
   $("#stage").innerHTML=`<div class="hd"><div class="logo-row"><img class="logo-img" style="width:48px;height:48px" src="${IMG.logo}" alt=""><div class="wordmark">AUDCONNECT 2026<b>NEXTGEN AUDIOLOGY</b></div></div><span class="st-here"><i class="here-dot"></i><b>${S.att.here}</b>${S.att.registered?` of ${S.att.registered}`:""} here now</span><span class="muted" style="font-weight:600">Join in at audconnect2026.com</span></div>
-  <div class="main">${body}</div><div class="ctl">${[["photos","Audigram"],["poll","Poll"],["cloud","Word cloud"],["qa","Questions"]].map(([k,l])=>`<button data-stage="${k}" aria-pressed="${v===k}">${l}</button>`).join("")}<button data-a="stageclose">Exit</button></div>`}
+  <div class="main">${body}</div><div class="ctl">${[["photos","Audigram"],["poll","Poll"],["cloud","Word cloud"],["qa","Questions"],["draw","Prize draw"]].map(([k,l])=>`<button data-stage="${k}" aria-pressed="${v===k}">${l}</button>`).join("")}<button data-a="stageclose">Exit</button></div>`}
 
+const _drawSeen={};let _drawSpin=null;
+function StageDraw(){const Z=S.prize||{prizes:3,winners:[],pool:[]};const W={};Z.winners.forEach(w=>W[w.slot]=w);
+  const fresh=Z.winners.find(w=>_drawSeen[w.slot]!==w.drawn_at);
+  if(fresh&&!_drawSpin){_drawSpin=fresh;setTimeout(()=>spinDraw(fresh),60)}
+  return `<h3 style="text-align:center">🏆 Prize Draw</h3><p class="muted" style="text-align:center;margin-top:-6px">Every way you took part today counted. Congratulations to our winners!</p>
+  <div class="dr-slots">${[...Array(Z.prizes)].map((_,i)=>{const n=i+1,w=W[n],show=w&&_drawSeen[n]===w.drawn_at;return `<div class="dr-slot${show?" won":""}" id="drs${n}"><span class="dr-m">${["🥇","🥈","🥉"][i]||"🏅"}</span><span class="dr-l">Prize ${n}</span><b class="dr-n" id="drn${n}">${show?esc(w.name):"?"}</b><span class="dr-c">${show?esc(w.company||""):""}</span></div>`}).join("")}</div>`}
+function spinDraw(w){const el=$("#drn"+w.slot),box=$("#drs"+w.slot);const pool=(S.prize&&S.prize.pool&&S.prize.pool.length?S.prize.pool:[w.name]);if(!el){_drawSeen[w.slot]=w.drawn_at;_drawSpin=null;return}
+  box.classList.add("spin");let t=0,d=60;const step=()=>{el.textContent=pool[Math.floor(Math.random()*pool.length)];t+=d;d=Math.min(320,d*1.09);if(t<4200)setTimeout(step,d);else{_drawSeen[w.slot]=w.drawn_at;_drawSpin=null;box.classList.remove("spin");Stage()}};step()}
 /* ============ Organiser dashboard (SAPSADMIN check in only) ============ */
 function Admin(){const t=S.adTab;const tabs=[["over","Overview"],["qa","Q&A"],["eng","Engage"],["fb","Feedback"],["att","Attendees"],["pts","Prize"],...(S.super?[["super","Super"]]:[])];
   return `<div class="app"><header class="top"><div class="logo-row"><img class="logo-img" src="${IMG.logo}" alt=""><div class="wordmark">AUDCONNECT 2026<b>ORGANISER</b></div></div><button class="hdr-btn" data-a="adexit">Exit</button></header>
@@ -486,7 +499,7 @@ function AdOver(){const A=S.ad.attendees,n=A.length,mem=A.filter(a=>a.saps_membe
   <div class="kpi"><div class="v">${S.ad.questions.filter(q=>!q.hidden).length}</div><div class="l">Questions asked</div></div><div class="kpi"><div class="v">${(S.adx||[]).filter(x=>x.certificate_eligible).length}</div><div class="l">Certificates earned</div></div></div>
   ${now?`<div class="rule-h">Now</div><div class="redbox"><span class="small" style="font-weight:800;letter-spacing:.08em"><span class="dot"></span>ON STAGE</span><span class="sess-title" style="margin-top:6px">${esc(now.title)}</span><span class="small muted">${esc(now.by||"")}</span></div>`:""}
   <div class="rule-h">Stage Screen</div><div class="box"><p class="small muted">Choose what the LED wall shows. Open the stage screen on the laptop connected to the LED wall.</p>
-  <div class="acts">${[["photos","Audigram wall"],["poll","Poll results"],["cloud","Word cloud"],["qa","Top questions"]].map(([k,l])=>`<button class="act ${S.stage.view===k?"on":""}" data-adstage="${k}">${l}</button>`).join("")}</div>
+  <div class="acts">${[["photos","Audigram wall"],["poll","Poll results"],["cloud","Word cloud"],["qa","Top questions"],["draw","Prize draw"]].map(([k,l])=>`<button class="act ${S.stage.view===k?"on":""}" data-adstage="${k}">${l}</button>`).join("")}</div>
   <div style="height:12px"></div><button class="btn" data-a="stage">OPEN STAGE SCREEN</button></div>
   <div class="rule-h">Who's Here</div><div class="box">${top.length?top.map(([c,v])=>`<div style="margin-bottom:10px"><div class="small" style="display:flex;justify-content:space-between"><span>${esc(c)}</span><b>${v}</b></div><div class="hbar"><i style="width:${v/mx*100}%"></i></div></div>`).join(""):'<span class="muted small">No check ins yet</span>'}</div>`}
 function AdQA(){const f=S.adQaSes||"all";const all=S.ad.questions;const qs=all.filter(q=>f==="all"||q.session_id===f).sort((a,b)=>(a.answered-b.answered)||b.votes-a.votes);const pin=S.stage.pinned_question;
@@ -529,12 +542,19 @@ function PromptEdit(p){p=p||{prompt:""};return `<h2 style="margin:6px 0 10px;fon
   <label class="lbl" for="cq">Question</label><input id="cq" class="field" maxlength="160" value="${esc(p.prompt)}" placeholder="e.g. One word for today">
   <p class="small muted" style="margin-top:10px">Saved as a draft. Tap Go live when you're ready.</p>
   <button class="btn" data-a="csave" data-id="${p.id||""}">SAVE</button><div style="height:8px"></div><button class="btn ghost" data-a="close">CANCEL</button>`}
-function AdPts(){const E=S.adPts.filter(x=>x.eligible),O=S.adPts.filter(x=>!x.eligible);const rk=x=>1+E.filter(y=>y.points>x.points).length;
-  return `<div class="box" style="margin-top:6px"><b>🏆 Prize ranking</b><p class="small muted" style="margin:6px 0 0">Private to organisers. Points stop counting at 5:35 PM, then announce the winners at Closing. Organisers are not ranked.</p><div class="acts" style="margin-top:10px"><button class="act" data-a="adrefresh">Refresh</button></div></div>
-  <div class="list" style="margin-top:12px"><table class="tbl">${E.slice(0,30).map(x=>`<tr><td style="width:34px"><b class="${rk(x)<=3?"medal":""}">${rk(x)}</b></td><td><b>${esc(x.first_name)} ${esc(x.last_name)}</b><br><span class="muted">${esc(x.company)}</span></td><td style="text-align:right"><b style="color:var(--gold);font-size:17px">${x.points}</b></td></tr>`).join("")||'<tr><td class="muted">No points yet</td></tr>'}</table></div>
-  ${E.length>30?`<p class="small muted" style="margin-top:8px">Showing the top 30 of ${E.length}. The full list is in the Excel export.</p>`:""}
-  ${O.length?`<details class="box" style="margin-top:12px"><summary class="small" style="font-weight:700">Organisers (not ranked): ${O.length}</summary><div class="small muted" style="margin-top:8px">${O.map(x=>`${esc(x.first_name)} ${esc(x.last_name)} · ${x.points}`).join("<br>")}</div></details>`:""}`}
-function AdSuper(){const RS=[["qa","Q&A questions and likes","SAPS questions are kept"],["audigram","Audigram photos, likes and comments",""],["polls","Poll votes","Polls are kept, votes are cleared"],["words","Word cloud words","Questions are kept"]];
+function AdPts(){const Z=S.prize||{min:20,prizes:3,winners:[],pool:[]};const E=S.adPts.filter(x=>x.eligible),IN=E.filter(x=>x.in_draw),O=S.adPts.filter(x=>!x.eligible);const tot=IN.reduce((a,x)=>a+x.points,0)||1;
+  const W={};Z.winners.forEach(w=>W[w.slot]=w);
+  return `<div class="box" style="margin-top:6px"><b>🏆 Prize draw</b><p class="small muted" style="margin:6px 0 0">${IN.length} attendee${IN.length===1?"":"s"} in the draw (${Z.min} points or more). Higher engagement gives better odds, never a guarantee. Organisers are not eligible. Activity counts until 5:35 PM.</p>
+  <div class="acts" style="margin-top:10px"><button class="act" data-adstage="draw">Show draw on screen</button><button class="act" data-a="adrefresh">Refresh</button></div></div>
+  <div class="list" style="margin-top:12px">${[...Array(Z.prizes)].map((_,i)=>{const n=i+1,w=W[n];return `<div class="item"><span style="font-size:24px">${["🥇","🥈","🥉"][i]||"🏅"}</span><span style="flex:1"><b style="display:block">Prize ${n}</b>${w?`<span>${esc(w.name)}</span><span class="small muted" style="display:block">${esc(w.company||"")}</span>`:`<span class="small muted">Not drawn yet</span>`}</span>
+    ${S.super?(w?`<button class="act" data-draw="${n}">Redraw</button>`:`<button class="act on" data-draw="${n}" ${IN.length?"":"disabled"}>Draw</button>`):""}</div>`}).join("")}</div>
+  ${S.super?`<p class="small muted" style="margin:8px 0 0">Open the stage screen first, then draw. Use Redraw if a winner isn't in the room.</p>`:`<p class="small muted" style="margin:8px 0 0">Only the super admin can draw the prizes.</p>`}
+  <div class="rule-h">In the draw</div><div class="list"><table class="tbl">${IN.map(x=>`<tr><td><b>${esc(x.first_name)} ${esc(x.last_name)}</b><br><span class="muted">${esc(x.company)}</span></td><td style="text-align:right;white-space:nowrap"><b style="color:var(--gold)">${x.points}</b><br><span class="small muted">${(x.points/tot*100).toFixed(1)}% of tickets</span></td></tr>`).join("")||'<tr><td class="muted">No one has reached the entry level yet</td></tr>'}</table></div>
+  ${E.length>IN.length?`<details class="box" style="margin-top:12px"><summary class="small" style="font-weight:700">Not in the draw yet: ${E.length-IN.length}</summary><div class="small muted" style="margin-top:8px">${E.filter(x=>!x.in_draw).map(x=>`${esc(x.first_name)} ${esc(x.last_name)} · ${x.points}`).join("<br>")}</div></details>`:""}
+  <details class="box" style="margin-top:12px"><summary class="small" style="font-weight:700">How points are counted (organisers only)</summary><div class="list" style="margin-top:8px">${POINTS_TABLE.map(([a,d,m])=>`<div class="item small"><span style="flex:1"><b>${a}</b><span class="muted" style="display:block">${d}</span></span><b style="color:var(--gold)">max ${m}</b></div>`).join("")}</div><p class="small muted" style="margin-top:8px">No points for likes received or questions picked for the screen, so popularity doesn't matter.</p></details>
+  ${O.length?`<details class="box" style="margin-top:12px"><summary class="small" style="font-weight:700">Organisers (not eligible): ${O.length}</summary><div class="small muted" style="margin-top:8px">${O.map(x=>`${esc(x.first_name)} ${esc(x.last_name)} · ${x.points}`).join("<br>")}</div></details>`:""}
+  ${S.super&&Z.winners.length?`<div style="height:12px"></div><button class="act danger" data-a="drawclear">Clear all draw results</button>`:""}`}
+function AdSuper(){const RS=[["everything","Everyone's check-in and all activity","Signs everyone else out of the app. Keeps the registration list, polls, word cloud questions and SAPS posts. Your own check-in stays"],["qa","Q&A questions and likes","SAPS questions are kept"],["audigram","Audigram photos, likes and comments",""],["polls","Poll votes","Polls are kept, votes are cleared"],["words","Word cloud words","Questions are kept"]];
   return `<div class="rule-h" style="margin-top:6px">Post as SAPS</div>${SapsBar()}<p class="small muted" style="margin:6px 0 0">When on, your questions, photos and comments show as SAPS ✓ everywhere in the app. Switch off to post as yourself.</p>
   <div class="rule-h">Reset a section</div><div class="box"><p class="small muted" style="margin:0 0 10px">Permanently deletes everything in that section. You'll be asked to type DELETE.</p>
   ${RS.map(([k,l,n])=>`<div class="item" style="padding:10px 0;border:0"><span style="flex:1"><b style="display:block;font-size:14px">${l}</b>${n?`<span class="small muted">${n}</span>`:""}</span><button class="act danger" data-sreset="${k}">Reset</button></div>`).join("")}</div>
@@ -631,7 +651,7 @@ function WelcomeCard(){const m=S.me;const k=cardKind(m);const sp=sponsorOf(m.co)
   return `<div class="wc"><div class="wc-frame"></div><img class="wc-logo" src="${IMG.logo}" alt="SAPS"><div class="wc-kick">${kick}</div>${extra}
   <div class="wc-greet">${greet}</div><div class="wc-name">${esc(name)}</div><div class="wc-orn"><span></span>✦<span></span></div>
   <p class="wc-body">${body}</p>
-  <div class="wc-eng"><b>🏆 Engage, earn points, win a prize</b><span>Ask questions, share photos on Audigram with your friends and colleagues, and join the live polls. Every activity earns you points, and the most engaged attendees win a prize!</span></div>
+  <div class="wc-eng"><b>🏆 Take part and win a prize</b><span>Ask questions, share photos on Audigram with your friends and colleagues, and join the live polls. Every way you take part counts, and the app picks three prize winners at Closing!</span></div>
   <div class="wc-sig">${sig}</div><button class="wc-btn" data-a="wcdone">CONTINUE</button></div>`}
 function showWelcomeCard(){const w=$("#welcome");w.innerHTML=`<div class="wc-wrap">${WelcomeCard()}</div>`;w.classList.add("open")}
 
@@ -642,7 +662,7 @@ function render(){
   if(!S.me){$("#root").innerHTML=`<div class="app" style="padding-bottom:0">${Register()}</div>`;return}
   if(S.tab==="qa"){S.tab="play";S.playSeg="qa"}if(S.playSeg==="photos"){S.playSeg="qa";S.tab="ag"}
   const tabs={prog:["Programme",Prog],play:["Engage",Engage],ag:["Audigram",Photos],fb:["CE",()=>S.quiz?`<h1 class="page-title">CE Quiz</h1><div style="height:12px"></div>`+CEQuiz():FB()],me:["Me",Me]};
-  $("#root").innerHTML=`<div class="app"><header class="top"><div class="logo-row"><img class="logo-img" src="${IMG.logo}" alt="SAPS"><div class="wordmark">AUDCONNECT 2026<b>NEXTGEN AUDIOLOGY</b></div></div><button class="hdr-btn" data-tab="me">${esc(S.me.fn)}${S.pts?` <span class="hdr-pts">⭐<b id="hdrPts">${S.pts.points}</b></span>`:""}</button></header><main>${tabs[S.tab][1]()}</main></div>
+  $("#root").innerHTML=`<div class="app"><header class="top"><div class="logo-row"><img class="logo-img" src="${IMG.logo}" alt="SAPS"><div class="wordmark">AUDCONNECT 2026<b>NEXTGEN AUDIOLOGY</b></div></div><button class="hdr-btn" data-tab="me">${esc(S.me.fn)}${S.pts&&S.pts.in_draw?` <span class="hdr-pts" id="hdrPts">🎟️</span>`:""}</button></header><main>${tabs[S.tab][1]()}</main></div>
   <nav class="tabs" aria-label="Main"><div class="in">${Object.entries(tabs).map(([k,[l]])=>`<button data-tab="${k}" ${S.tab===k?'aria-current="page"':""}>${I[k]}${l}</button>`).join("")}</div></nav>`;
   const qs=$("#qs");if(qs)qs.onchange=e=>{S.qaSession=e.target.value;render()};
 }
@@ -691,7 +711,10 @@ document.addEventListener("click",async e=>{
   if(d.cedit){const p=S.adPrompts.find(x=>x.id===+d.cedit);sheet(PromptEdit(p));return}
   if(d.cdel){const p=S.adPrompts.find(x=>x.id===+d.cdel);sheet(confirmSheet("Delete this word cloud?",`"${esc(p?p.prompt:"")}" and all its words will be deleted.`,"cdelgo",`data-id="${d.cdel}"`));return}
   if(d.sdel){const [k,id]=d.sdel.split(":");const L={photo:"photo",comment:"comment",question:"question",word:"word"}[k];sheet(confirmSheet(`Delete this ${L}?`,`This permanently removes the ${L}${k==="photo"?" and its comments":""}. Hide it instead if you might want it back.`,"sdelgo",`data-k="${k}" data-id="${id}"`));return}
-  if(d.sreset){const L={qa:"all Q&A questions and likes (SAPS questions are kept)",audigram:"all Audigram photos, likes and comments",polls:"all poll votes",words:"all word cloud words"}[d.sreset];sheet(confirmSheet("Reset this section?",`This permanently deletes ${L}. It cannot be undone.`,"sresetgo",`data-k="${d.sreset}"`));return}
+  if(d.sreset){const L={everything:"every check-in except yours, with all questions, votes, words, photos, comments, ratings, feedback, CE attempts and prize draw results. Everyone else is signed out and checks in again",qa:"all Q&A questions and likes (SAPS questions are kept)",audigram:"all Audigram photos, likes and comments",polls:"all poll votes",words:"all word cloud words"}[d.sreset];sheet(confirmSheet("Reset this section?",`This permanently deletes ${L}. It cannot be undone.`,"sresetgo",`data-k="${d.sreset}"`));return}
+  if(d.draw){const n=+d.draw;const has=(S.prize&&S.prize.winners||[]).some(w=>w.slot===n);
+    if(has){sheet(`<h2 style="margin:6px 0 8px;font-size:20px;font-weight:900">Redraw prize ${n}?</h2><p class="muted">Use this only if the winner isn't in the room. A new winner is picked, and the current winner can't be picked again for this prize.</p><div style="height:12px"></div><button class="btn" data-a="drawgo" data-n="${n}">REDRAW PRIZE ${n}</button><div style="height:8px"></div><button class="btn ghost" data-a="close">CANCEL</button>`);return}
+    b.disabled=true;await adminAct("super_draw",{p_slot:n},`Prize ${n} drawn. Watch the big screen!`);return}
   if(d.attedit){const a=S.ad.attendees.find(x=>x.id===d.attedit);if(a)sheet(AttEdit(a));return}
   if(d.attdel){const a=S.ad.attendees.find(x=>x.id===d.attdel);if(a)sheet(confirmSheet("Delete this check in?",`${esc(a.first_name)} ${esc(a.last_name)} (${esc(a.company)}) and everything they posted, voted and submitted will be deleted.`,"attdelgo",`data-id="${a.id}"`));return}
   if(d.ans){S.trivia.picked=+d.ans;if(+d.ans===TRIVIA[S.trivia.i].a)S.trivia.score++;render();return}
@@ -786,10 +809,13 @@ document.addEventListener("click",async e=>{
         if(ok){S.committee=true;close();S.admin=true;S.adTab="over";render();scrollTo(0,0);toast("Organiser access unlocked");await loadAdmin().catch(()=>{});render()}
         else{b.disabled=false;toast("That code isn't right")}}
       catch(x){b.disabled=false;toast(/too many/i.test((x&&x.message)||"")?"Too many attempts. Ask the committee for help":errMsg(x))}break}
-    case "stage":S.stageLocal=null;await loadAdmin().catch(()=>{});Stage();$("#stage").classList.add("open");clearInterval(S._stT);S._stT=setInterval(()=>{if($("#stage").classList.contains("open"))refreshSoon();else clearInterval(S._stT)},6000);try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}catch(x){}break;
+    case "stage":S.stageLocal=null;await loadAdmin().catch(()=>{});((S.prize&&S.prize.winners)||[]).forEach(w=>_drawSeen[w.slot]=w.drawn_at);Stage();$("#stage").classList.add("open");clearInterval(S._stT);S._stT=setInterval(()=>{if($("#stage").classList.contains("open"))refreshSoon();else clearInterval(S._stT)},6000);try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}catch(x){}break;
     case "stageclose":$("#stage").classList.remove("open");try{document.fullscreenElement&&document.exitFullscreen()}catch(x){}break;
     case "admin":S.admin=true;S.adTab="over";render();scrollTo(0,0);try{await loadAdmin()}catch(x){toast(errMsg(x))}render();break;
     case "adexit":S.admin=false;render();scrollTo(0,0);break;
+    case "drawgo":close();await adminAct("super_draw",{p_slot:+d.n},`Prize ${d.n} redrawn`);break;
+    case "drawclear":sheet(confirmSheet("Clear all draw results?","All prize winners will be removed so you can draw again.","drawcleargo"));break;
+    case "drawcleargo":{if(($("#delc").value||"").trim()!=="DELETE"){toast("Type DELETE to confirm");return}close();Object.keys(_drawSeen).forEach(k=>delete _drawSeen[k]);await adminAct("super_draw_clear",{},"Draw results cleared");break}
     case "adrefresh":try{await loadAdmin()}catch(x){}render();toast("Updated");break;
     case "pnew":sheet(PollEdit());setTimeout(()=>{const f=$("#pq");f&&f.focus()},50);break;
     case "psave":{const q=($("#pq").value||"").trim();const o=[0,1,2,3,4,5].map(i=>($("#po"+i).value||"").trim()).filter(Boolean);
