@@ -206,24 +206,37 @@ function ciBadge(g){const m={sal:g.salutation,fn:g.first_name,ln:g.last_name,rol
 function CheckIn(){const c=S.ci;
   if(c.step==="pick"&&c.card)return ciHead("ciback")+`<p class="muted" style="text-align:center;margin:0 0 12px">Is this you?</p>${ciBadge(c.card)}
     <div style="height:14px"></div><button class="btn" data-a="ciyes" ${S.busy?"disabled":""}>${S.busy?"CHECKING IN...":"YES, THAT'S ME"}</button><div style="height:8px"></div><button class="btn ghost" data-a="cinot">NOT ME</button>`;
-  if(c.step==="form"){const m=S.reg.member;const insts=instOptions();const other=S.reg.coSel==="__other";
+  if(c.step==="match")return ciHead("ciform")+`<p class="muted" style="text-align:center;margin:0 0 12px">We found a registration that may be you. Is one of these you?</p>
+    <div class="list">${(c.results||[]).map(r=>`<button class="item" data-cipick="${r.id}"><span style="flex:1"><b style="display:block">${esc(r.name)}</b><span class="small muted">${esc(r.inst||"")}</span></span><span class="pill">That's me ›</span></button>`).join("")}</div>
+    <div style="height:14px"></div><button class="btn ghost" data-a="cinomatch" ${S.busy?"disabled":""}>NONE OF THESE, CHECK ME IN</button>`;
+  if(c.step==="inst")return ciHead("ciform")+`<div class="box" style="text-align:center"><p style="margin:0 0 6px">You typed</p><p style="font-weight:800;margin:0 0 14px">${esc(c.typed)}</p><p style="margin:0 0 6px">Did you mean</p><p style="font-weight:800;font-size:18px;margin:0 0 16px;color:var(--gold)">${esc(c.suggest)}</p>
+    <button class="btn" data-a="instyes" ${S.busy?"disabled":""}>YES, USE THIS</button><div style="height:8px"></div><button class="btn ghost" data-a="instno" ${S.busy?"disabled":""}>NO, KEEP WHAT I TYPED</button></div>`;
+  if(c.step==="form"){const m=S.reg.member;
     return ciHead("ciback")+`<p class="muted" style="text-align:center;margin:0 0 4px">Enter your details to check in.</p>
     <label class="lbl" for="sal">Salutation (optional)</label><select id="sal" class="field">${SALUTATIONS.map(x=>`<option value="${x}" ${x===(S.reg.sal||"")?"selected":""}>${x||"None"}</option>`).join("")}</select>
     <label class="lbl" for="fn">First name</label><input id="fn" class="field" autocomplete="given-name" value="${esc(S.reg.fn||"")}">
     <label class="lbl" for="ln">Last name</label><input id="ln" class="field" autocomplete="family-name" value="${esc(S.reg.ln||"")}">
     <label class="lbl" for="ti">Job title (optional)</label><input id="ti" class="field" placeholder="e.g. Senior Audiologist" value="${esc(S.reg.ti||"")}">
-    <label class="lbl" for="cosel">Institution</label><select id="cosel" class="field"><option value="">Choose your institution</option>${insts.map(x=>`<option ${x===S.reg.coSel?"selected":""}>${esc(x)}</option>`).join("")}<option value="__other" ${other?"selected":""}>Other (type it in)</option></select>
-    ${other?`<input id="co" class="field" style="margin-top:8px" placeholder="Your institution or company" value="${esc(S.reg.co||"")}">`:""}
+    <label class="lbl" for="co">Institution</label><input id="co" class="field" autocomplete="organization" placeholder="Your hospital, clinic or company" value="${esc(S.reg.co||"")}">
     <label class="lbl">SAPS member</label><div class="yn" role="radiogroup"><button data-mem="yes" aria-pressed="${m==="yes"}">Yes</button><button data-mem="no" aria-pressed="${m==="no"}">No</button></div>
     <p class="small muted" style="margin-top:8px">Checked in before? Use the same name and institution to pick up where you left off.</p>
     <div style="height:10px"></div><button class="btn" data-a="checkin" ${S.busy?"disabled":""}>${S.busy?"CHECKING IN...":"CHECK IN"}</button>`}
-  return ciHead("hideform")+`<p class="muted" style="text-align:center;margin:0 0 4px">Find yourself on the registration list.</p>
-    <label class="lbl" for="fn">First name</label><input id="fn" class="field" autocomplete="given-name" value="${esc(S.reg.fn||"")}">
-    <label class="lbl" for="ln">Last name</label><input id="ln" class="field" autocomplete="family-name" value="${esc(S.reg.ln||"")}">
-    <div style="height:14px"></div><button class="btn" data-a="cifind" ${S.busy?"disabled":""}>${S.busy?"SEARCHING...":"FIND ME"}</button>
-    ${c.searched?(c.results&&c.results.length?`<div class="rule-h">Is one of these you?</div><div class="list">${c.results.map(r=>`<button class="item" data-cipick="${r.id}"><span style="flex:1"><b style="display:block">${esc(r.name)}</b><span class="small muted">${esc(r.inst||"")}</span></span><span class="pill">That's me ›</span></button>`).join("")}</div>`
-      :`<div class="box" style="margin-top:16px;text-align:center"><p style="margin:0 0 12px">We couldn't find you on the registration list.</p><button class="btn" data-a="ciform">ENTER MY DETAILS</button></div>`):""}
+  return ciHead("hideform")+`<p class="muted" style="text-align:center;margin:0 0 4px">Type your name to find yourself on the registration list.</p>
+    <label class="lbl" for="nm">Your name</label><input id="nm" class="field" autocomplete="name" placeholder="e.g. Tan Mei Ling" value="${esc(S.reg.nm||"")}">
+    <div id="ciRes">${ciResults()}</div>
     <p style="text-align:center;margin-top:18px"><button class="linkbtn" data-a="ciform">Not on the list? Enter your details</button></p>`}
+function ciResults(){const c=S.ci;if(!c.searched)return `<p class="small muted" style="margin-top:10px">Your matches appear here as you type.</p>`;
+  return c.results&&c.results.length?`<div class="rule-h">Tap your name</div><div class="list">${c.results.map(r=>`<button class="item" data-cipick="${r.id}"><span style="flex:1"><b style="display:block">${esc(r.name)}</b><span class="small muted">${esc(r.inst||"")}</span></span><span class="pill">That's me ›</span></button>`).join("")}</div>`
+    :`<div class="box" style="margin-top:16px;text-align:center"><p style="margin:0 0 12px">We couldn't find that name on the registration list. Check the spelling, or enter your details.</p><button class="btn" data-a="ciform">ENTER MY DETAILS</button></div>`}
+const splitName=t=>{const w=String(t||"").replace(/^\s*(dr|mr|mrs|ms|mdm|prof)\.?\s+/i,"").trim().split(/\s+/).filter(Boolean);return w.length>1?[w.slice(0,-1).join(" "),w[w.length-1]]:w.length?[w[0],w[0]]:["",""]};
+let _ciT=null,_ciQ="";
+async function ciSearch(){const t=(S.reg.nm||"").trim();if(t.replace(/\s/g,"").length<3){S.ci.searched=false;S.ci.results=[];const b=$("#ciRes");if(b)b.innerHTML=ciResults();return}
+  _ciQ=t;const [f,l]=splitName(t);let r=[];try{r=await rpc("find_registrant",{p_first:f,p_last:l})||[]}catch(e){}
+  if(_ciQ!==t)return;S.ci.results=r;S.ci.searched=true;const b=$("#ciRes");if(b)b.innerHTML=ciResults()}
+const normInst=t=>String(t||"").toLowerCase().replace(/&/g," and ").replace(/[^a-z0-9]+/g," ").trim();
+function dice(a,b){a=normInst(a).replace(/ /g,"");b=normInst(b).replace(/ /g,"");if(!a||!b)return 0;if(a===b)return 1;const g=x=>{const m={};for(let i=0;i<x.length-1;i++){const k=x.substr(i,2);m[k]=(m[k]||0)+1}return m};const A=g(a),B=g(b);let n=0;for(const k in A)if(B[k])n+=Math.min(A[k],B[k]);return 2*n/(a.length-1+b.length-1)}
+function instMatch(co){const L=[...new Set([...(S.insts||[]),...INSTITUTIONS])];let best=null,bs=0;for(const x of L){const v=dice(co,x);if(v>bs){bs=v;best=x}}
+  if(!best)return null;if(normInst(best)===normInst(co))return {exact:best};return bs>=0.72?{close:best}:null}
 function Prog(){const now=nowSession();return Hero()+HereNow()+`
   ${now?`<div class="redbox" style="margin-top:22px"><span class="small" style="font-weight:800;letter-spacing:.08em"><span class="dot"></span>HAPPENING NOW</span><span class="sess-title" style="margin-top:6px">${esc(now.title)}</span><span class="small muted">${esc(now.by||now.sub)}</span>
   ${now.rate?`<div style="display:flex;gap:8px;margin-top:12px"><button class="btn" data-qa="${now.id}">ASK A QUESTION</button><button class="btn ghost" data-rate="${now.id}">RATE TALK</button></div>`:""}</div>`:""}
@@ -436,7 +449,7 @@ function EditProf(){const m=S.me;const src=S._avUrl||(m.photo?avatarUrl(m.photo)
   <label class="lbl" for="ep_fn">First name</label><input id="ep_fn" class="field" value="${esc(m.fn)}">
   <label class="lbl" for="ep_ln">Last name</label><input id="ep_ln" class="field" value="${esc(m.ln)}">
   <label class="lbl" for="ep_t">Job title (optional)</label><input id="ep_t" class="field" placeholder="e.g. Senior Audiologist" value="${esc(m.title)}">
-  <label class="lbl" for="ep_co">Institution</label><input id="ep_co" class="field" list="ep_insts" value="${esc(m.co)}"><datalist id="ep_insts">${instOptions().map(x=>`<option value="${esc(x)}">`).join("")}</datalist>
+  <label class="lbl" for="ep_co">Institution</label><input id="ep_co" class="field" value="${esc(m.co)}">
   <p class="small muted" style="margin-top:10px">Your certificate uses this name. If you change the spelling, use the new spelling next time you check in.</p>
   <button class="btn" data-a="epsave">SAVE</button><div style="height:8px"></div><button class="btn ghost" data-a="close">CANCEL</button>`}
 function SuperCode(){return `<h2 style="margin-top:0;font-weight:900;text-transform:uppercase">Super admin</h2>
@@ -593,6 +606,9 @@ function saveBlob(blob,name){const a=document.createElement("a");a.href=URL.crea
 function downloadCSV(name,rows){const csv=rows.map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\r\n");
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 
+async function doWalkin(){const r=S.reg;S.busy=true;render();
+  try{const res=await rpc("check_in_v2",{p_first:r.fn.trim(),p_last:r.ln.trim(),p_company:(r.co||"").trim().replace(/\s+/g," "),p_member:r.member==="yes",p_title:r.ti||null,p_salutation:r.sal||null});await finishCheckin(res)}
+  catch(x){S.busy=false;S.ci={step:"form"};render();toast(errMsg(x))}}
 async function finishCheckin(res){S.token=res.token;try{localStorage.setItem("ac26_token",S.token)}catch(x){}
   await loadMine();await loadPublic().catch(()=>{});S.busy=false;S.showForm=false;S.ci={step:"find"};S.reg={member:null};S.tab="prog";render();scrollTo(0,0);
   if(res.returning)toast(`Welcome back, ${res.first_name}`);else showWelcomeCard()}
@@ -630,7 +646,7 @@ function render(){
   <nav class="tabs" aria-label="Main"><div class="in">${Object.entries(tabs).map(([k,[l]])=>`<button data-tab="${k}" ${S.tab===k?'aria-current="page"':""}>${I[k]}${l}</button>`).join("")}</div></nav>`;
   const qs=$("#qs");if(qs)qs.onchange=e=>{S.qaSession=e.target.value;render()};
 }
-const keepReg=()=>{const g=(id,d)=>{const el=$("#"+id);return el?el.value:d};S.reg.fn=g("fn",S.reg.fn);S.reg.ln=g("ln",S.reg.ln);S.reg.co=g("co",S.reg.co);S.reg.sal=g("sal",S.reg.sal);S.reg.ti=g("ti",S.reg.ti);S.reg.coSel=g("cosel",S.reg.coSel)};
+const keepReg=()=>{const g=(id,d)=>{const el=$("#"+id);return el?el.value:d};S.reg.nm=g("nm",S.reg.nm);S.reg.fn=g("fn",S.reg.fn);S.reg.ln=g("ln",S.reg.ln);S.reg.co=g("co",S.reg.co);S.reg.sal=g("sal",S.reg.sal);S.reg.ti=g("ti",S.reg.ti);S.reg.coSel=g("cosel",S.reg.coSel)};
 async function act(fn,args,ok){try{await rpc(fn,args);if(ok)toast(ok)}catch(e){toast(errMsg(e))}await loadPublic().catch(()=>{});render()}
 async function adminAct(fn,args,ok){try{await rpc(fn,{p_token:S.token,...args});if(ok)toast(ok)}catch(e){toast(errMsg(e))}await Promise.all([loadPublic(),loadAdmin()]).catch(()=>{});render();renderStageIfOpen()}
 
@@ -691,19 +707,25 @@ document.addEventListener("click",async e=>{
   if(d.hidecm){await adminAct("admin_set_hidden",{p_kind:"comment",p_id:+d.hidecm,p_hidden:d.v==="true"});return}
   if(d.hideword){await adminAct("admin_set_hidden",{p_kind:"word",p_id:+d.hideword,p_hidden:d.v==="true"});return}
   switch(d.a){
-    case "checkin":{keepReg();const r=S.reg;const co=(r.coSel==="__other"?r.co:r.coSel)||"";
+    case "checkin":{keepReg();const r=S.reg;const co=(r.co||"").trim().replace(/\s+/g," ");
       if(!(r.fn||"").trim()){toast("Add your first name");return}if(!(r.ln||"").trim()){toast("Add your last name");return}
-      if(!co.trim()){toast("Choose your institution");return}if(!r.member){toast("Tell us if you're a SAPS member");return}
+      if(!co){toast("Type your institution");return}if(!r.member){toast("Tell us if you're a SAPS member");return}
       S.busy=true;render();
-      try{const res=await rpc("check_in_v2",{p_first:r.fn,p_last:r.ln,p_company:co,p_member:r.member==="yes",p_title:r.ti||null,p_salutation:r.sal||null});await finishCheckin(res)}
-      catch(x){S.busy=false;render();toast(errMsg(x))}break}
-    case "cifind":{keepReg();const r=S.reg;if(!(r.fn||"").trim()||!(r.ln||"").trim()){toast("Type your first and last name");return}
+      if(!S.ci.noMatch){let m=[];try{m=await rpc("find_registrant",{p_first:r.fn,p_last:r.ln})||[]}catch(x){}
+        if(m.length){S.busy=false;S.ci={step:"match",results:m};render();scrollTo(0,0);break}}
+      if(!S.ci.instOk){if(!S.insts||!S.insts.length){try{S.insts=await rpc("institutions",{})||[]}catch(x){}}
+        const im=instMatch(co);if(im&&im.exact)S.reg.co=im.exact;else if(im&&im.close){S.busy=false;S.ci={...S.ci,step:"inst",typed:co,suggest:im.close};render();scrollTo(0,0);break}}
+      await doWalkin();break}
+    case "cinomatch":S.ci={step:"form",noMatch:true};render();document.querySelector("[data-a=checkin]").click();break;
+    case "instyes":S.reg.co=S.ci.suggest;S.ci={step:"form",noMatch:true,instOk:true};render();document.querySelector("[data-a=checkin]").click();break;
+    case "instno":S.reg.co=S.ci.typed;S.ci={step:"form",noMatch:true,instOk:true};render();document.querySelector("[data-a=checkin]").click();break;
+    case "cifindOLD":{keepReg();const r=S.reg;if(!(r.fn||"").trim()||!(r.ln||"").trim()){toast("Type your first and last name");return}
       S.busy=true;render();try{S.ci.results=await rpc("find_registrant",{p_first:r.fn,p_last:r.ln})||[];S.ci.searched=true}catch(x){toast(errMsg(x))}S.busy=false;render();break}
-    case "ciform":keepReg();S.ci.step="form";render();scrollTo(0,0);break;
+    case "ciform":keepReg();if(S.reg.nm&&!S.reg.fn&&!S.reg.ln){const [f,l]=splitName(S.reg.nm);if(f!==l){S.reg.fn=f;S.reg.ln=l}else S.reg.fn=f}S.ci={step:"form"};render();scrollTo(0,0);break;
     case "cinot":S.ci.step="form";S.ci.card=null;render();scrollTo(0,0);break;
     case "ciback":keepReg();S.ci={step:"find",searched:S.ci.searched,results:S.ci.results};render();scrollTo(0,0);break;
     case "ciyes":{if(!S.ci.card)return;S.busy=true;render();try{const res=await rpc("checkin_registrant",{p_id:S.ci.card.id});await finishCheckin(res)}catch(x){S.busy=false;render();toast(errMsg(x))}break}
-    case "showform":S.showForm=true;S.ci={step:"find"};render();scrollTo(0,0);rpc("institutions",{}).then(c=>{S.insts=c||[]}).catch(()=>{});setTimeout(()=>{const f=$("#fn");f&&f.focus()},50);break;
+    case "showform":S.showForm=true;S.ci={step:"find"};S.reg={member:null};render();scrollTo(0,0);rpc("institutions",{}).then(c=>{S.insts=c||[]}).catch(()=>{});setTimeout(()=>{const f=$("#nm");f&&f.focus()},50);break;
     case "hideform":keepReg();S.showForm=false;render();break;
     case "close":close();break;
     case "logoutask":sheet(`<h2 style="margin:6px 0 8px;font-size:20px;font-weight:900">Log out?</h2><p class="muted">You can come back any time. Check in again with the same first name, last name and company and your profile, quiz and feedback will be restored.</p><div style="height:14px"></div><button class="btn" data-a="signout">LOG OUT</button><div style="height:8px"></div><button class="btn ghost" data-a="close">STAY CHECKED IN</button>`);break;
@@ -792,13 +814,13 @@ document.addEventListener("click",async e=>{
     case "exportfb":downloadCSV("audconnect2026-feedback.csv",[["Type","Item","Score","Comment"],...S.ad.feedback.flatMap(f=>[["Event","Overall satisfaction",f.satisfaction,""],["Event","Met expectations",f.expectations,""],...FB_STARS.map(([k,l])=>["Event",l,f[k],""]),["Event","Most valuable sessions","",f.valuable||""],["Event","Future topics","",f.next_topic||""],["Event","Other feedback","",f.other||""],["Event","Someone new they met","",f.met||""]]),...S.ad.ratings.map(r=>["Session",(SESSIONS.find(s=>s.id===r.session_id)||{}).title||r.session_id,r.stars,r.comment||""])]);break;
   }
 });
+document.addEventListener("input",e=>{if(e.target.id==="nm"){S.reg.nm=e.target.value;clearTimeout(_ciT);_ciT=setTimeout(ciSearch,300);return}});
 document.addEventListener("input",e=>{const t=e.target;if(t.id==="fe")S.fbf.email=t.value;else if(t.id&&t.id.startsWith("ft_"))S.fbf[t.id.slice(3)]=t.value});
 document.addEventListener("dblclick",e=>{const im=e.target.closest("[data-dbl]");if(!im)return;const id=+im.dataset.dbl;if(!S.myLikes.has(id)){const btn=document.querySelector(`[data-like="${id}"]`);btn&&btn.click()}});
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.classList&&e.target.classList.contains("ag-in")){e.preventDefault();const b=document.querySelector(`[data-cmpost="${e.target.dataset.cmin}"]`);b&&b.click()}});
 document.addEventListener("change",e=>{if(e.target.id!=="avfile"||!e.target.files[0])return;const f=e.target.files[0];const rd=new FileReader();
   rd.onload=()=>{const im=new Image();im.onload=()=>{const n=Math.min(im.width,im.height),sz=400;const c=document.createElement("canvas");c.width=sz;c.height=sz;c.getContext("2d").drawImage(im,(im.width-n)/2,(im.height-n)/2,n,n,0,0,sz,sz);
     c.toBlob(bl=>{if(!bl){toast("That photo couldn't be prepared");return}S._avBlob=bl;S._avUrl=c.toDataURL("image/jpeg",.8);S._avRemove=false;const a=$("#epAv");if(a)a.innerHTML=`<img src="${S._avUrl}" alt="">`},"image/jpeg",.85)};im.onerror=()=>toast("That file isn't a photo we can open");im.src=rd.result};rd.readAsDataURL(f);e.target.value=""});
-document.addEventListener("change",e=>{if(e.target.id==="cosel"){keepReg();render();if(S.reg.coSel==="__other")setTimeout(()=>{const c=$("#co");c&&c.focus()},30)}});
 document.addEventListener("change",e=>{if(e.target.id!=="pfile"||!e.target.files[0])return;const f=e.target.files[0];const rd=new FileReader();
   rd.onload=()=>{const im=new Image();im.onload=()=>{const m=1600,sc=Math.min(1,m/Math.max(im.width,im.height));const c=document.createElement("canvas");c.width=Math.round(im.width*sc);c.height=Math.round(im.height*sc);c.getContext("2d").drawImage(im,0,0,c.width,c.height);
     c.toBlob(bl=>{if(!bl){toast("That photo couldn't be prepared");return}S._pendingBlob=bl;S._pendingUrl=c.toDataURL("image/jpeg",.6);sheet(PhotoCompose())},"image/jpeg",.82)};im.onerror=()=>toast("That file isn't a photo we can open");im.src=rd.result};rd.readAsDataURL(f);e.target.value=""});
