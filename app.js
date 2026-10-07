@@ -176,7 +176,7 @@ const Hero=()=>`<div class="hero"><img class="logo-big" src="${IMG.logo}" alt="S
   <div class="fact"><span class="ico">${I.pin}</span><span><b>SUNTEC SINGAPORE</b><span class="small muted">${EVENT.room}</span></span></div></div></div>`;
 
 
-const HereNow=()=>`<div class="here"><i class="here-dot"></i><span><b>${S.att.here}</b> ${S.att.registered?`of ${S.att.registered} `:""}here now</span></div>`;
+const HereNow=()=>`<div class="here sm"><i class="here-dot"></i><span><b>${S.att.here}</b> here now</span></div>`;
 const Brand=()=>`<div class="hero" style="padding-top:0"><img class="logo-big" src="${IMG.logo}" alt="Society for Audiology Professionals Singapore">
   <div class="kick"><span>${EVENT.kicker}</span></div><img class="ngimg" src="${IMG.ng}" alt="NextGen Audiology"><div class="tl">${EVENT.theme.toUpperCase()}</div></div>`;
 /* ============ Screens ============ */
@@ -238,7 +238,7 @@ const normInst=t=>String(t||"").toLowerCase().replace(/&/g," and ").replace(/[^a
 function dice(a,b){a=normInst(a).replace(/ /g,"");b=normInst(b).replace(/ /g,"");if(!a||!b)return 0;if(a===b)return 1;const g=x=>{const m={};for(let i=0;i<x.length-1;i++){const k=x.substr(i,2);m[k]=(m[k]||0)+1}return m};const A=g(a),B=g(b);let n=0;for(const k in A)if(B[k])n+=Math.min(A[k],B[k]);return 2*n/(a.length-1+b.length-1)}
 function instMatch(co){const L=[...new Set([...(S.insts||[]),...INSTITUTIONS])];let best=null,bs=0;for(const x of L){const v=dice(co,x);if(v>bs){bs=v;best=x}}
   if(!best)return null;if(normInst(best)===normInst(co))return {exact:best};return bs>=0.72?{close:best}:null}
-function Prog(){const now=nowSession();return Hero()+HereNow()+`
+function Prog(){const now=nowSession();return Hero()+`
   ${now?`<div class="redbox" style="margin-top:22px"><span class="small" style="font-weight:800;letter-spacing:.08em"><span class="dot"></span>HAPPENING NOW</span><span class="sess-title" style="margin-top:6px">${esc(now.title)}</span><span class="small muted">${esc(now.by||now.sub)}</span>
   ${now.rate?`<div style="display:flex;gap:8px;margin-top:12px"><button class="btn" data-qa="${now.id}">ASK A QUESTION</button><button class="btn ghost" data-rate="${now.id}">RATE TALK</button></div>`:""}</div>`:""}
   <div class="rule-h">Programme</div>
@@ -416,7 +416,7 @@ function CEQuiz(){const Q=S.quiz;if(!Q||!Q.qs)return `<p class="muted">Loading t
   <div style="display:flex;gap:8px;margin-top:6px">${Q.i>0?`<button class="btn ghost" data-a="ceprev">BACK</button>`:""}<button class="btn" data-a="${Q.i+1<Q.qs.length?"cenext":"cesubmit"}" ${pick==null?"disabled":""}>${Q.i+1<Q.qs.length?"NEXT":"SUBMIT"}</button></div></div>
   <button class="btn ghost" style="margin-top:10px" data-a="ceclose">EXIT QUIZ</button>`}
 
-function Me(){const m=S.me;const sp=sponsorOf(m.co);const ar=apprRole(m);return `<h1 class="page-title">My Badge</h1><div style="height:14px"></div>
+function Me(){const m=S.me;const sp=sponsorOf(m.co);const ar=apprRole(m);return `<div class="me-top"><h1 class="page-title">My Badge</h1>${HereNow()}</div><div style="height:14px"></div>
   <div class="badge"><div class="band"><img class="logo-img" src="${IMG.logo}" alt="">AUDCONNECT 2026</div><div class="body">
   ${m.photo?`<img class="bd-ph" src="${avatarUrl(m.photo)}" alt="">`:""}
   <div class="nm">${esc(fullName(m))}</div>${m.title?`<p class="bd-t">${esc(m.title)}</p>`:""}
@@ -475,7 +475,7 @@ function Stage(){const v=S.stageLocal||S.stage.view;if(_drawSpin&&v==="draw"&&$(
   if(v==="photos"){const ps=S.photos.slice(0,6);body=`<h3><span class="ag-word" style="font-size:1.4em">Audigram</span> <span style="font-size:.5em;color:var(--red-t)">#AudConnect2026</span></h3><div class="wall">${ps.map(p=>`<figure><img src="${photoSrc(p)}" alt=""><figcaption>${esc(p.author_name)}</figcaption></figure>`).join("")}</div>`}
   if(v==="draw")body=StageDraw();
   if(v==="lb"){body=`<h3>Trivia leaderboard</h3>${S.board.map((r,i)=>`<div class="sq"><b>${i+1}</b><span style="flex:1">${esc(r.display_name)}</span><span>${r.score}</span></div>`).join("")||"<p>No scores yet</p>"}`}
-  $("#stage").innerHTML=`<div class="hd"><div class="logo-row"><img class="logo-img" style="width:48px;height:48px" src="${IMG.logo}" alt=""><div class="wordmark">AUDCONNECT 2026<b>NEXTGEN AUDIOLOGY</b></div></div><span class="st-here"><i class="here-dot"></i><b>${S.att.here}</b>${S.att.registered?` of ${S.att.registered}`:""} here now</span><span class="muted" style="font-weight:600">Join in at audconnect2026.com</span></div>
+  $("#stage").innerHTML=`<div class="hd"><div class="logo-row"><img class="logo-img" style="width:48px;height:48px" src="${IMG.logo}" alt=""><div class="wordmark">AUDCONNECT 2026<b>NEXTGEN AUDIOLOGY</b></div></div><span class="st-here"><i class="here-dot"></i><b>${S.att.here}</b> here now</span><span class="muted" style="font-weight:600">Join in at audconnect2026.com</span></div>
   <div class="main">${body}</div><div class="ctl">${[["photos","Audigram"],["poll","Poll"],["cloud","Word cloud"],["qa","Questions"],["draw","Prize draw"]].map(([k,l])=>`<button data-stage="${k}" aria-pressed="${v===k}">${l}</button>`).join("")}<button data-a="stageclose">Exit</button></div>`}
 
 const _drawSeen={};let _drawSpin=null;
