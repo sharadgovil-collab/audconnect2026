@@ -553,7 +553,7 @@ function AdQA(){const f=S.adQaSes||"all";const all=S.ad.questions;const qs=all.f
 function AdEng(){
   return `<div class="rule-h" style="margin-top:6px">Photos</div><div class="box"><p class="small muted">Hide anything unsuitable. Hidden photos disappear from phones and the big screen.</p>
   <div class="thumbs">${S.ad.photos.map(p=>`<div class="thumb" style="${p.hidden?"opacity:.35":""}"><img src="${photoSrc(p)}" alt="" loading="lazy"><button class="act ${p.hidden?"":"on"}" data-hidephoto="${p.id}" data-v="${!p.hidden}">${p.hidden?"Unhide":"Hide"}</button>${S.super?`<button class="act danger" data-sdel="photo:${p.id}">Delete</button>`:""}</div>`).join("")||'<span class="muted small">No photos yet</span>'}</div>
-  <div class="acts" style="margin-top:12px"><button class="act" data-adstage="photos">Show Audigram on screen</button></div></div>
+  <div class="acts" style="margin-top:12px"><button class="act" data-adstage="photos">Show Audigram on screen</button><button class="act on" data-a="photozip">Download all photos (ZIP)</button></div></div>
   <div class="rule-h">Audigram Comments</div><div class="box"><p class="small muted">Hide any comment that shouldn't be shown. It disappears from everyone's phone.</p>
   <div class="list" style="margin-top:8px">${(S.adc||[]).slice(0,60).map(r=>`<div class="item" style="${r.hidden?"opacity:.4":""}"><span style="flex:1"><b style="display:block;font-size:13px">${esc(r.author_name)} <span class="muted" style="font-weight:500">on ${r.target==="welcome"?"welcome post":"photo"}</span></b><span class="small">${esc(r.body)}</span></span><button class="act ${r.hidden?"":"on"}" data-hidecm="${r.id}" data-v="${!r.hidden}">${r.hidden?"Unhide":"Hide"}</button>${S.super?`<button class="act danger" data-sdel="comment:${r.id}">Delete</button>`:""}</div>`).join("")||'<div class="item small muted">No comments yet</div>'}</div></div>
   ${AdPolls()}${AdPrompts()}
@@ -843,6 +843,13 @@ document.addEventListener("click",async e=>{
         S._pendingBlob=null;close();await loadPublic();render();scrollTo(0,0);toast(sp?"Photo posted as SAPS":"Photo posted");if(!sp)bumpPoints()}
       catch(x){pb.disabled=false;pb.textContent="POST PHOTO";toast(errMsg(x))}break}
     case "cert":await certFontReady();sheet(Cert());break;
+    case "photozip":{const L=(S.photos||[]).filter(p=>!p.storage_path.startsWith("static/"));if(!L.length){toast("No photos yet");return}b.disabled=true;const t0=b.textContent;
+      try{if(!window.JSZip)await new Promise((ok,no)=>{const sc=document.createElement("script");sc.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";sc.onload=ok;sc.onerror=no;document.head.appendChild(sc)});
+        const z=new JSZip();const lines=["No.,Posted by,Caption"];let n=0;
+        for(const p of L.slice().reverse()){n++;b.textContent=`DOWNLOADING ${n} OF ${L.length}...`;const r=await fetch(photoSrc(p));if(!r.ok)continue;const bl=await r.blob();const ext=(bl.type.split("/")[1]||"jpg").replace("jpeg","jpg");
+          const nm=`${String(n).padStart(2,"0")}_${(p.author_name||"Guest").replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"")}.${ext}`;z.file(nm,bl);lines.push(`${n},"${(p.author_name||"").replace(/"/g,'""')}","${(p.caption||"").replace(/"/g,'""')}"`)}
+        z.file("captions.csv","﻿"+lines.join("\r\n"));b.textContent="PREPARING ZIP...";saveBlob(await z.generateAsync({type:"blob"}),"AudConnect2026_Audigram_Photos.zip");toast("Photos downloaded")}
+      catch(e){toast("Couldn't download the photos. Please try again")}b.disabled=false;b.textContent=t0;break}
     case "certappr":await certFontReady();sheet(CertAppr());break;
     case "certapprpdf":{b.disabled=true;b.textContent="PREPARING PDF...";try{saveBlob(await certPDF(S.me.fn,S.me.ln,apprRole(S.me)),certName(S.me.fn,S.me.ln,true))}catch(e){toast("Couldn't create the PDF")}b.disabled=false;b.textContent="DOWNLOAD PDF";break}
     case "welcome":openWelcome();break;
