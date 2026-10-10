@@ -140,7 +140,9 @@ async function loadAdmin(){if(!S.committee)return;const [a,x,cm,pp,pt,lg,pr,pz,r
 
 let _t=null;
 setInterval(async()=>{if(S.token&&!(S.win&&S.win.open)){try{const w=await rpc("window_status",{p_token:S.token});if(w.open!==S.win.open){S.win=w;softRender()}}catch(e){}}},60000);
-function refreshSoon(){clearTimeout(_t);_t=setTimeout(async()=>{try{await loadPublic();if(S.admin||$("#stage").classList.contains("open"))await loadAdmin()}catch(e){}softRender()},350)}
+let _lastRf=0,_rfBusy=false;
+function refreshSoon(){if(_t)return;const big=S.admin||$("#stage").classList.contains("open");const gap=big?5000:15000;const wait=Math.max(0,_lastRf+gap-Date.now())+(big?300:1000+Math.random()*4000);
+  _t=setTimeout(async()=>{_t=null;if(_rfBusy)return;_rfBusy=true;_lastRf=Date.now();try{await loadPublic();if(S.admin||$("#stage").classList.contains("open"))await loadAdmin()}catch(e){}_rfBusy=false;if(S.token&&!S.me){try{await loadMine()}catch(e){}}softRender()},wait)}
 function softRender(){
   // Avoid wiping what someone is typing
   const a=document.activeElement;if(a&&(a.tagName==="TEXTAREA"||(a.tagName==="INPUT"&&a.type!=="checkbox"))&&!$("#stage").classList.contains("open"))return;
@@ -719,6 +721,7 @@ function showWelcomeCard(){const w=$("#welcome");w.innerHTML=`<div class="wc-wra
 function renderQuiz(){render();scrollTo(0,0)}
 function render(){
   if(S.admin){$("#root").innerHTML=Admin();const a=$("#aqs");if(a)a.onchange=e=>{S.adQaSes=e.target.value;render()};const rq=$("#regq");if(rq)rq.oninput=e=>{S.regQ=e.target.value;const p=e.target.selectionStart;render();const n=$("#regq");n.focus();n.setSelectionRange(p,p)};const aq=$("#attq");if(aq)aq.oninput=e=>{S.attQ=e.target.value;const p=e.target.selectionStart;render();const n=$("#attq");n.focus();n.setSelectionRange(p,p)};return}
+  if(!S.me&&S.token){$("#root").innerHTML=`<div class="app"><div class="box" style="margin-top:40px;text-align:center"><div style="font-size:30px">⏳</div><p style="font-weight:800;margin:8px 0 4px">Reconnecting…</p><p class="small muted" style="margin:0">You are still checked in. The app is busy for a moment and will continue automatically.</p></div></div>`;return}
   if(!S.me){$("#root").innerHTML=`<div class="app" style="padding-bottom:0">${Register()}</div>`;return}
   if(S.tab==="qa"){S.tab="play";S.playSeg="qa"}if(S.playSeg==="photos"){S.playSeg="qa";S.tab="ag"}
   const tabs={prog:["Programme",Prog],play:["Engage",Engage],ag:["Audigram",Photos],fb:["CE",()=>S.quiz?`<h1 class="page-title">CE Quiz</h1><div style="height:12px"></div>`+CEQuiz():FB()],me:["Me",Me]};
@@ -930,6 +933,6 @@ document.addEventListener("change",e=>{if(e.target.id!=="pfile"||!e.target.files
 (async function start(){
   render();
   try{await loadPublic()}catch(e){}
-  if(S.token){try{await loadMine()}catch(e){if(/not checked in/i.test((e&&e.message)||"")){S.token=null;try{localStorage.removeItem("ac26_token")}catch(x){}}}}
+  if(S.token){for(let i=0;i<20&&!S.me;i++){try{await loadMine()}catch(e){if(/not checked in/i.test((e&&e.message)||"")){S.token=null;try{localStorage.removeItem("ac26_token")}catch(x){}break}render();await new Promise(r=>setTimeout(r,3000+Math.random()*3000))}}}
   render();subscribe();
 })();
