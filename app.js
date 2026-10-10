@@ -234,17 +234,17 @@ function CheckIn(){const c=S.ci;
     <label class="lbl">SAPS member</label><div class="yn" role="radiogroup"><button data-mem="yes" aria-pressed="${m==="yes"}">Yes</button><button data-mem="no" aria-pressed="${m==="no"}">No</button></div>
     <p class="small muted" style="margin-top:8px">Checked in before? Use the same name and institution to pick up where you left off.</p>
     <div style="height:10px"></div><button class="btn" data-a="checkin" ${S.busy?"disabled":""}>${S.busy?"CHECKING IN...":"CHECK IN"}</button>`}
-  return ciHead("hideform")+`<p class="muted" style="text-align:center;margin:0 0 4px">Type your name to find yourself on the registration list.</p>
+  return ciHead("hideform")+`<p class="muted" style="text-align:center;margin:0 0 4px">${CI_CLOSED()?"Type your name to sign in. Registered attendees and walk-ins can both use their name.":"Type your name to find yourself on the registration list."}</p>
     <label class="lbl" for="nm">Your name</label><input id="nm" class="field" autocomplete="name" placeholder="e.g. Tan Mei Ling" value="${esc(S.reg.nm||"")}">
     <div id="ciRes">${ciResults()}</div>
-    <p style="text-align:center;margin-top:18px"><button class="linkbtn" data-a="ciform">${CI_CLOSED()?"Checked in as a walk-in? Enter your name and institution":"Not on the list? Enter your details"}</button></p>`}
+    <p style="text-align:center;margin-top:18px">${CI_CLOSED()?"":`<button class="linkbtn" data-a="ciform">Not on the list? Enter your details</button>`}</p>`}
 function ciResults(){const c=S.ci;if(!c.searched)return `<p class="small muted" style="margin-top:10px">Your matches appear here as you type.</p>`;
   return c.results&&c.results.length?`<div class="rule-h">Tap your name</div><div class="list">${c.results.map(r=>`<button class="item" data-cipick="${r.id}"><span style="flex:1"><b style="display:block">${esc(r.name)}</b><span class="small muted">${esc(r.inst||"")}</span></span><span class="pill">That's me ›</span></button>`).join("")}</div>`
-    :`<div class="box" style="margin-top:16px;text-align:center"><p style="margin:0 0 12px">We couldn't find that name on the registration list. Check the spelling, or enter your details.</p><button class="btn" data-a="ciform">ENTER MY DETAILS</button></div>`}
+    :c.att?`<div class="box" style="margin-top:16px;text-align:center"><p style="margin:0">We couldn't find that name among the people who checked in on 10 October. Try your full name as you gave it at the event, or contact the SAPS team for help.</p></div>`:`<div class="box" style="margin-top:16px;text-align:center"><p style="margin:0 0 12px">We couldn't find that name on the registration list. Check the spelling, or enter your details.</p><button class="btn" data-a="ciform">ENTER MY DETAILS</button></div>`}
 const splitName=t=>{const w=String(t||"").replace(/^\s*(dr|mr|mrs|ms|mdm|prof)\.?\s+/i,"").trim().split(/\s+/).filter(Boolean);return w.length>1?[w.slice(0,-1).join(" "),w[w.length-1]]:w.length?[w[0],w[0]]:["",""]};
 let _ciT=null,_ciQ="";
 async function ciSearch(){const t=(S.reg.nm||"").trim();if(t.replace(/\s/g,"").length<3){S.ci.searched=false;S.ci.results=[];const b=$("#ciRes");if(b)b.innerHTML=ciResults();return}
-  _ciQ=t;const [f,l]=splitName(t);let r=[];try{r=await rpc("find_registrant",{p_first:f,p_last:l})||[]}catch(e){}
+  _ciQ=t;const [f,l]=splitName(t);let r=[];S.ci.att=false;if(CI_CLOSED()){try{r=await rpc("find_attendee",{p_first:f,p_last:l})||[];S.ci.att=true}catch(e){}}if(!S.ci.att){try{r=await rpc("find_registrant",{p_first:f,p_last:l})||[]}catch(e){}}
   if(_ciQ!==t)return;S.ci.results=r;S.ci.searched=true;const b=$("#ciRes");if(b)b.innerHTML=ciResults()}
 const normInst=t=>String(t||"").toLowerCase().replace(/&/g," and ").replace(/[^a-z0-9]+/g," ").trim();
 function dice(a,b){a=normInst(a).replace(/ /g,"");b=normInst(b).replace(/ /g,"");if(!a||!b)return 0;if(a===b)return 1;const g=x=>{const m={};for(let i=0;i<x.length-1;i++){const k=x.substr(i,2);m[k]=(m[k]||0)+1}return m};const A=g(a),B=g(b);let n=0;for(const k in A)if(B[k])n+=Math.min(A[k],B[k]);return 2*n/(a.length-1+b.length-1)}
@@ -771,6 +771,7 @@ document.addEventListener("click",async e=>{
   const b=e.target.closest("button");if(!b)return;const d=b.dataset;
   if(d.tab){S.tab=d.tab;close();render();scrollTo(0,0);return}
   if(d.mem){keepReg();S.reg.member=d.mem;render();return}
+  if(d.cipick&&S.ci.att){S.busy=true;render();try{const res=await rpc("signin_attendee",{p_id:d.cipick});await finishCheckin(res)}catch(x){S.busy=false;render();toast(errMsg(x))}return}
   if(d.cipick){S.busy=true;try{S.ci.card=await rpc("registrant_card",{p_id:d.cipick});S.ci.step="pick"}catch(x){toast(errMsg(x))}S.busy=false;render();scrollTo(0,0);return}
   if(d.sess){sheet(Sess(d.sess));return}
   if(d.spk){sheet(Spk(d.spk));return}
