@@ -186,6 +186,8 @@ const HereNow=()=>`<div class="here sm"><i class="here-dot"></i><span><b>${S.att
 const Brand=()=>`<div class="hero" style="padding-top:0"><img class="logo-big" src="${IMG.logo}" alt="Society for Audiology Professionals Singapore">
   <div class="kick"><span>${EVENT.kicker}</span></div><img class="ngimg" src="${IMG.ng}" alt="NextGen Audiology"><div class="tl">${EVENT.theme.toUpperCase()}</div></div>`;
 /* ============ Screens ============ */
+const CI_CLOSED=()=>Date.now()>=Date.parse("2026-10-10T19:00:00+08:00");
+const CE_OPEN_TILL=Date.parse("2026-10-12T23:59:59+08:00");
 function Register(){
   if(!S.showForm)return `<main class="landing">
   <svg class="swoosh" viewBox="0 0 300 260" preserveAspectRatio="xMinYMin slice" aria-hidden="true"><defs><filter id="bl" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter><linearGradient id="sw" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#FF2E45" stop-opacity=".9"/><stop offset="1" stop-color="#FF2E45" stop-opacity="0"/></linearGradient></defs>
@@ -197,15 +199,20 @@ function Register(){
     <div class="lp-kick"><i class="lp-dot"></i><span>${EVENT.kicker}</span></div>
     <img class="lp-ng" src="${IMG.ng}" alt="NextGen Audiology">
     <div class="lp-tl">DRIVING EFFICIENCY, ENHANCING CARE</div>
+    ${CI_CLOSED()?`<div class="lp-ty"><b>THANK YOU</b><span>FOR JOINING US!</span></div>
+    <p class="lp-tyt">AudConnect 2026 brought our audiology community together on World Audiologist Day, 10 October 2026.</p>
+    ${Date.now()<CE_OPEN_TILL?`<div class="lp-cpe"><b>For your CPE points</b><p>Complete both by <b>Monday 12 October, 11:59 PM</b>:</p><ol><li>Event feedback</li><li>CE quiz</li></ol><p class="sm">Both are in the CE tab after you sign in. SAPS will credit your CPE points once both are done. There is no need to submit your professional diary.</p></div>`:`<div class="lp-cpe"><p>The CE quiz and feedback have now closed. Thank you to everyone who took part.</p></div>`}
+    <button class="btn big" data-a="showform">ATTENDEES: SIGN IN</button>
+    <p class="lp-note">Sign in with the name you checked in with at the event. Sign in is only for people who attended.</p>`:`
     <div class="lp-facts"><div class="lp-f"><span class="ico">${I.cal}</span><div><b>10 OCT 2026</b><span>12:30 – 6:00 PM</span><em>Lunch from 12:30</em></div></div>
     <div class="lp-f"><span class="ico">${I.pin}</span><div><b>SUNTEC</b><span>Level 3</span><em>Room 300-302</em></div></div></div>
-    <button class="btn big" data-a="showform">CHECK IN</button>
+    <button class="btn big" data-a="showform">CHECK IN</button>`}
   </div></main>`;
   return `<main>${CheckIn()}</main>`}
 const instOptions=()=>[...new Set([...(S.insts||[]),...INSTITUTIONS])].sort((a,b)=>a.localeCompare(b));
 function ciHead(back){return `<button class="hdr-btn" data-a="${back}" style="margin-top:16px">‹ Back</button>
   <div style="text-align:center;margin-top:10px"><img class="logo-img" style="width:72px;height:72px" src="${IMG.logo}" alt=""></div>
-  <div class="rule-h" style="margin-top:18px">Check In</div>`}
+  <div class="rule-h" style="margin-top:18px">${CI_CLOSED()?"Sign In":"Check In"}</div>`}
 function ciBadge(g){const m={sal:g.salutation,fn:g.first_name,ln:g.last_name,roles:g.roles||[]};const sp=sponsorOf(g.institution);
   return `<div class="badge confirm"><div class="body"><div class="nm">${esc(fullName(m))}</div>${g.title?`<p class="bd-t">${esc(g.title)}</p>`:""}
   <p class="bd-co">${esc(g.institution||"")}${sp?` ${TIER_ICON[sp.tier]}`:""}</p>${g.saps_member&&g.member_id?`<p class="bd-mid">MSAPS ${esc(g.member_id)}</p>`:""}
@@ -230,7 +237,7 @@ function CheckIn(){const c=S.ci;
   return ciHead("hideform")+`<p class="muted" style="text-align:center;margin:0 0 4px">Type your name to find yourself on the registration list.</p>
     <label class="lbl" for="nm">Your name</label><input id="nm" class="field" autocomplete="name" placeholder="e.g. Tan Mei Ling" value="${esc(S.reg.nm||"")}">
     <div id="ciRes">${ciResults()}</div>
-    <p style="text-align:center;margin-top:18px"><button class="linkbtn" data-a="ciform">Not on the list? Enter your details</button></p>`}
+    <p style="text-align:center;margin-top:18px"><button class="linkbtn" data-a="ciform">${CI_CLOSED()?"Checked in as a walk-in? Enter your name and institution":"Not on the list? Enter your details"}</button></p>`}
 function ciResults(){const c=S.ci;if(!c.searched)return `<p class="small muted" style="margin-top:10px">Your matches appear here as you type.</p>`;
   return c.results&&c.results.length?`<div class="rule-h">Tap your name</div><div class="list">${c.results.map(r=>`<button class="item" data-cipick="${r.id}"><span style="flex:1"><b style="display:block">${esc(r.name)}</b><span class="small muted">${esc(r.inst||"")}</span></span><span class="pill">That's me ›</span></button>`).join("")}</div>`
     :`<div class="box" style="margin-top:16px;text-align:center"><p style="margin:0 0 12px">We couldn't find that name on the registration list. Check the spelling, or enter your details.</p><button class="btn" data-a="ciform">ENTER MY DETAILS</button></div>`}
