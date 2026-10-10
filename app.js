@@ -685,6 +685,32 @@ async function certPDF(fn,ln,role){
   pdf.setProperties({title:`AudConnect 2026 Certificate of ${role?"Appreciation":"Participation"}: ${name}`,author:"Society for Audiology Professionals Singapore"});
   return pdf.output("blob")}
 const certName=(fn,ln,appr)=>`AudConnect2026_${appr?"Appreciation":"Certificate"}_${(fn+"_"+ln).replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"")}.pdf`;
+async function _bmp(src){if(src instanceof Blob)return await createImageBitmap(src);if(src.startsWith("data:")){const im=new Image();im.src=src;await im.decode();return im}const r=await fetch(src);return await createImageBitmap(await r.blob())}
+function _wrap(g,text,maxW){const out=[];for(const para of String(text).split(/\n/)){let line="";for(const w of para.split(/\s+/)){const t=line?line+" "+w:w;if(g.measureText(t).width>maxW&&line){out.push(line);line=w}else line=t}out.push(line)}return out}
+async function igCard(p,photoBlob){const W=1080,PAD=36,F='-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif';
+  const ph=await _bmp(photoBlob);let pw=ph.width,phh=ph.height;const ratio=Math.min(Math.max(phh/pw,0.5625),1.25);const PH=Math.round(W*ratio);
+  const saps=p.author_kind==="saps";const name=saps?"SAPS":(p.author_name||"Guest");const sub=saps?"Society for Audiology Professionals (Singapore)":(p.author_company||"");
+  const cm=(S.comments["photo:"+p.id]||[]).slice(0,3);const likes=(S.likes||{})[p.id]||0;
+  const tmp=document.createElement("canvas").getContext("2d");tmp.font=`30px ${F}`;
+  const capLines=p.caption?_wrap(tmp,name+"  "+p.caption,W-2*PAD).slice(0,8):[];const cmLines=cm.map(c=>_wrap(tmp,(c.author_name||"")+"  "+c.body,W-2*PAD).slice(0,2));
+  const H=150+PH+90+capLines.length*42+cmLines.reduce((a,l)=>a+l.length*40,0)+(cm.length?16:0)+110;
+  const cv=document.createElement("canvas");cv.width=W;cv.height=H;const g=cv.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,W,H);
+  // header
+  const ax=PAD+46,ay=75,ar=46;const grd=g.createLinearGradient(ax-ar,ay+ar,ax+ar,ay-ar);grd.addColorStop(0,"#F2B84B");grd.addColorStop(.5,"#E1192E");grd.addColorStop(1,"#0A1633");
+  g.beginPath();g.arc(ax,ay,ar+5,0,7);g.fillStyle=grd;g.fill();g.beginPath();g.arc(ax,ay,ar+1,0,7);g.fillStyle="#fff";g.fill();
+  g.save();g.beginPath();g.arc(ax,ay,ar-3,0,7);g.clip();let av=null;try{av=saps?await _bmp(IMG.logo):(p.author_photo?await _bmp(avatarUrl(p.author_photo)):null)}catch(e){}
+  if(av){const s2=Math.min(av.width,av.height);g.drawImage(av,(av.width-s2)/2,(av.height-s2)/2,s2,s2,ax-ar+3,ay-ar+3,2*ar-6,2*ar-6)}else{g.fillStyle="#0A1633";g.fillRect(ax-ar,ay-ar,2*ar,2*ar);g.fillStyle="#fff";g.font=`bold 34px ${F}`;g.textAlign="center";g.textBaseline="middle";g.fillText(ini(name),ax,ay+2)}g.restore();
+  g.textAlign="left";g.textBaseline="alphabetic";g.fillStyle="#111";g.font=`bold 32px ${F}`;g.fillText(name,ax+ar+24,sub?66:86);if(sub){g.fillStyle="#666";g.font=`26px ${F}`;g.fillText(sub.length>48?sub.slice(0,47)+"…":sub,ax+ar+24,104)}
+  // photo (center crop to allowed ratio)
+  const want=PH/W;let sx=0,sy=0,sw=pw,sh=phh;if(phh/pw>want){sh=pw*want;sy=(phh-sh)/2}else{sw=phh/want;sx=(pw-sw)/2}g.drawImage(ph,sx,sy,sw,sh,0,150,W,PH);
+  // likes row
+  let y=150+PH+64;g.fillStyle="#E1192E";g.font=`40px ${F}`;g.fillText("♥",PAD,y);g.fillStyle="#111";g.font=`bold 30px ${F}`;g.fillText(`${likes} like${likes===1?"":"s"}`,PAD+52,y-4);
+  y+=26;
+  g.font=`30px ${F}`;capLines.forEach((l,i)=>{y+=42;if(i===0&&l.startsWith(name)){g.font=`bold 30px ${F}`;g.fillStyle="#111";g.fillText(name,PAD,y);const w=g.measureText(name+"  ").width;g.font=`30px ${F}`;g.fillText(l.slice(name.length).trimStart(),PAD+w,y)}else{g.fillStyle="#111";g.fillText(l,PAD,y)}});
+  if(cm.length){y+=16;cmLines.forEach((ls,k)=>ls.forEach((l,i)=>{y+=40;const an=cm[k].author_name||"";g.fillStyle="#333";if(i===0&&l.startsWith(an)){g.font=`bold 28px ${F}`;g.fillText(an,PAD,y);const w=g.measureText(an+"  ").width;g.font=`28px ${F}`;g.fillText(l.slice(an.length).trimStart(),PAD+w,y)}else{g.font=`28px ${F}`;g.fillText(l,PAD,y)}}))}
+  // footer
+  g.fillStyle="#888";g.font=`26px ${F}`;g.fillText("10 October 2026  ·  #AudConnect2026  ·  Audigram",PAD,H-40);
+  return await new Promise(ok=>cv.toBlob(ok,"image/jpeg",.92))}
 function saveBlob(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},800)}
 function downloadCSV(name,rows){const csv=rows.map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\r\n");
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
@@ -845,9 +871,11 @@ document.addEventListener("click",async e=>{
     case "cert":await certFontReady();sheet(Cert());break;
     case "photozip":{const L=(S.photos||[]).filter(p=>!p.storage_path.startsWith("static/"));if(!L.length){toast("No photos yet");return}b.disabled=true;const t0=b.textContent;
       try{if(!window.JSZip)await new Promise((ok,no)=>{const sc=document.createElement("script");sc.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";sc.onload=ok;sc.onerror=no;document.head.appendChild(sc)});
-        const z=new JSZip();const lines=["No.,Posted by,Caption"];let n=0;
-        for(const p of L.slice().reverse()){n++;b.textContent=`DOWNLOADING ${n} OF ${L.length}...`;const r=await fetch(photoSrc(p));if(!r.ok)continue;const bl=await r.blob();const ext=(bl.type.split("/")[1]||"jpg").replace("jpeg","jpg");
-          const nm=`${String(n).padStart(2,"0")}_${(p.author_name||"Guest").replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"")}.${ext}`;z.file(nm,bl);lines.push(`${n},"${(p.author_name||"").replace(/"/g,'""')}","${(p.caption||"").replace(/"/g,'""')}"`)}
+        const z=new JSZip();const lines=["No.,Posted by,Caption,Likes"];let n=0;
+        for(const p of L.slice().reverse()){n++;b.textContent=`PREPARING ${n} OF ${L.length}...`;const r=await fetch(photoSrc(p));if(!r.ok)continue;const bl=await r.blob();const ext=(bl.type.split("/")[1]||"jpg").replace("jpeg","jpg");
+          const base=`${String(n).padStart(2,"0")}_${(p.author_name||"Guest").replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"")}`;
+          z.file(`Originals/${base}.${ext}`,bl);try{z.file(`Instagram style/${base}.jpg`,await igCard(p,bl))}catch(e){}
+          lines.push(`${n},"${(p.author_name||"").replace(/"/g,'""')}","${(p.caption||"").replace(/"/g,'""')}",${(S.likes||{})[p.id]||0}`)}
         z.file("captions.csv","﻿"+lines.join("\r\n"));b.textContent="PREPARING ZIP...";saveBlob(await z.generateAsync({type:"blob"}),"AudConnect2026_Audigram_Photos.zip");toast("Photos downloaded")}
       catch(e){toast("Couldn't download the photos. Please try again")}b.disabled=false;b.textContent=t0;break}
     case "certappr":await certFontReady();sheet(CertAppr());break;
