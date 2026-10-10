@@ -151,9 +151,10 @@ function softRender(){
 }
 function renderStageIfOpen(){if($("#stage").classList.contains("open"))Stage()}
 function subscribe(){
-  sb.channel("live").on("postgres_changes",{event:"*",schema:"public"},refreshSoon).subscribe();
-  setInterval(refreshSoon,20000);
-  setInterval(()=>{if(S.token&&!S.admin)rpc("my_points",{p_token:S.token}).then(p=>{S.pts=p}).catch(()=>{})},30000);
+  // Live push only for organiser screens; phones check every 60s (keeps the server light)
+  if(S.committee)sb.channel("live").on("postgres_changes",{event:"*",schema:"public"},refreshSoon).subscribe();
+  setInterval(()=>{if(document.visibilityState==="visible")refreshSoon()},S.committee?20000:60000);
+  setInterval(()=>{if(S.token&&!S.admin&&document.visibilityState==="visible")rpc("my_points",{p_token:S.token}).then(p=>{S.pts=p}).catch(()=>{})},120000);
 }
 
 function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2200)}
