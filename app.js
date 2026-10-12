@@ -202,8 +202,8 @@ function Register(){
     ${CI_CLOSED()?`<div class="lp-ty"><b>THANK YOU</b><span>FOR JOINING US!</span></div>
     <p class="lp-tyt">AudConnect 2026 brought our audiology community together on World Audiologist Day, 10 October 2026.</p>
     ${Date.now()<CE_OPEN_TILL?`<div class="lp-cpe"><b>For your CPE points</b><p>Complete both by <b>Monday 12 October, 11:59 PM</b>:</p><ol><li>Event feedback</li><li>CE quiz</li></ol><p class="sm">Both are in the CE tab after you sign in. SAPS will credit your CPE points once both are done. There is no need to submit your professional diary.</p></div>`:`<div class="lp-cpe"><p>The CE quiz and feedback have now closed. Thank you to everyone who took part.</p></div>`}
-    <button class="btn big" data-a="showform">ATTENDEES: SIGN IN</button>
-    <p class="lp-note">Sign in with the name you checked in with at the event. Sign in is only for people who attended.</p>`:`
+    ${Date.now()<CE_OPEN_TILL?`<button class="btn big" data-a="showform">ATTENDEES: SIGN IN</button>
+    <p class="lp-note">Sign in with the name you checked in with at the event. Sign in is only for people who attended.</p>`:`<div style="text-align:center;margin-top:26px"><button class="btn ghost" data-a="showform" style="display:inline-block;width:auto;padding:9px 20px;font-size:12px;letter-spacing:.12em;opacity:.75">ORGANISER SIGN IN</button></div>`}`:`
     <div class="lp-facts"><div class="lp-f"><span class="ico">${I.cal}</span><div><b>10 OCT 2026</b><span>12:30 – 6:00 PM</span><em>Lunch from 12:30</em></div></div>
     <div class="lp-f"><span class="ico">${I.pin}</span><div><b>SUNTEC</b><span>Level 3</span><em>Room 300-302</em></div></div></div>
     <button class="btn big" data-a="showform">CHECK IN</button>`}
