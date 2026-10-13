@@ -187,7 +187,7 @@ const Brand=()=>`<div class="hero" style="padding-top:0"><img class="logo-big" s
   <div class="kick"><span>${EVENT.kicker}</span></div><img class="ngimg" src="${IMG.ng}" alt="NextGen Audiology"><div class="tl">${EVENT.theme.toUpperCase()}</div></div>`;
 /* ============ Screens ============ */
 const CI_CLOSED=()=>Date.now()>=Date.parse("2026-10-10T19:00:00+08:00");
-const CE_OPEN_TILL=Date.parse("2026-10-12T23:59:59+08:00");
+const CE_OPEN_TILL=Date.parse("2026-10-14T23:59:59+08:00");
 function Register(){
   if(!S.showForm)return `<main class="landing">
   <svg class="swoosh" viewBox="0 0 300 260" preserveAspectRatio="xMinYMin slice" aria-hidden="true"><defs><filter id="bl" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter><linearGradient id="sw" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#FF2E45" stop-opacity=".9"/><stop offset="1" stop-color="#FF2E45" stop-opacity="0"/></linearGradient></defs>
@@ -201,7 +201,7 @@ function Register(){
     <div class="lp-tl">DRIVING EFFICIENCY, ENHANCING CARE</div>
     ${CI_CLOSED()?`<div class="lp-ty"><b>THANK YOU</b><span>FOR JOINING US!</span></div>
     <p class="lp-tyt">AudConnect 2026 brought our audiology community together on World Audiologist Day, 10 October 2026.</p>
-    ${Date.now()<CE_OPEN_TILL?`<div class="lp-cpe"><b>For your CPE points</b><p>Complete both by <b>Monday 12 October, 11:59 PM</b>:</p><ol><li>Event feedback</li><li>CE quiz</li></ol><p class="sm">Both are in the CE tab after you sign in. SAPS will credit your CPE points once both are done. There is no need to submit your professional diary.</p></div>`:`<div class="lp-cpe"><p>The CE quiz and feedback have now closed. Thank you to everyone who took part.</p></div>`}
+    ${Date.now()<CE_OPEN_TILL?`<div class="lp-cpe"><b>For your CPE points</b><p>Extended: complete both by <b>Wednesday 14 October, 11:59 PM</b>:</p><ol><li>Event feedback</li><li>CE quiz</li></ol><p class="sm">Both are in the CE tab after you sign in. SAPS will credit your CPE points once both are done. There is no need to submit your professional diary.</p></div>`:`<div class="lp-cpe"><p>The CE quiz and feedback have now closed. Thank you to everyone who took part.</p></div>`}
     ${Date.now()<CE_OPEN_TILL?`<button class="btn big" data-a="showform">ATTENDEES: SIGN IN</button>
     <p class="lp-note">Sign in with the name you checked in with at the event. Sign in is only for people who attended.</p>`:`<div style="text-align:center;margin-top:26px"><button class="btn ghost" data-a="showform" style="display:inline-block;width:auto;padding:9px 20px;font-size:12px;letter-spacing:.12em;opacity:.75">ORGANISER SIGN IN</button></div>`}`:`
     <div class="lp-facts"><div class="lp-f"><span class="ico">${I.cal}</span><div><b>10 OCT 2026</b><span>12:30 – 6:00 PM</span><em>Lunch from 12:30</em></div></div>
